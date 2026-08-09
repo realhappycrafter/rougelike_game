@@ -1,0 +1,33 @@
+name: Godot CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    name: Validate project & build Web export
+    runs-on: ubuntu-latest
+    # barichello/godot-ci 已内置对应版本的 Godot 与导出模板
+    # 如需更换 Godot 版本，把镜像标签改为对应版本（如 4.7 / 4.6.3）即可
+    container:
+      image: barichello/godot-ci:4.7.1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Import & sanity-check (editor must load without errors)
+        run: godot --headless --editor --quit --path .
+
+      - name: Web export (release)
+        run: |
+          mkdir -p build/web
+          godot --headless --export-release "Web" build/web/index.html
+
+      - name: Upload Web build
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: build/web
+          retention-days: 14
