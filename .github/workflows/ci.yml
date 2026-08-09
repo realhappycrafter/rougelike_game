@@ -31,3 +31,37 @@ jobs:
           name: web-build
           path: build/web
           retention-days: 14
+
+  android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    # 同一 godot-ci 镜像：内置 Godot、导出模板与 Android SDK（含 gradle 构建所需）
+    container:
+      image: barichello/godot-ci:4.7.1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Build Android (debug, gradle)
+        # 全新 checkout 无 android/build 目录，Godot 会在导出时自动解压并安装
+        # Android 构建模板（写入正确的 .build_version），从而绕开本地手动解压会踩的坑。
+        # use_gradle_build=true 时包名取自 export_presets.cfg 的 package_name，
+        # 产出即 com.yzj_workspace.rougelikesurvivors（而非派生包名）。
+        run: |
+          mkdir -p build/android
+          godot --headless --export-debug "Android" build/android/rougelike_debug.apk
+
+      - name: Verify APK package name
+        run: |
+          PKG=$(aapt2 dump badging build/android/rougelike_debug.apk 2>/dev/null | grep -oE "package: name='[^']+'" | head -1)
+          echo "APK: $PKG"
+          echo "$PKG" | grep -q "com.yzj_workspace.rougelikesurvivors" && echo "OK: 精确包名生效" || echo "WARN: 包名非预期"
+
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: build/android/rougelike_debug.apk
+          retention-days: 14
