@@ -1,0 +1,13 @@
+{
+  "normal": { "id": "normal", "name": "小怪",   "hp": 10,   "speed": 55,  "damage": 5,  "size": 12, "exp": 1,   "coin": 1,  "weight": 100, "ai": "chase", "color": "#c0392b", "boss": false, "shape": "imp" },
+  "fast":   { "id": "fast",   "name": "快速怪", "hp": 6,    "speed": 110, "damage": 4,  "size": 9,  "exp": 2,   "coin": 1,  "weight": 60,  "ai": "chase", "color": "#e67e22", "boss": false, "shape": "fast" },
+  "elite":  { "id": "elite",  "name": "精英怪", "hp": 120,  "speed": 45,  "damage": 12, "size": 22, "exp": 20,  "coin": 5,  "weight": 12,  "ai": "chase", "color": "#8e44ad", "boss": false, "elite": true, "shape": "elite" },
+  "brute":  { "id": "brute",  "name": "狂暴怪", "hp": 30,   "speed": 45,  "damage": 8,  "size": 16, "exp": 3,   "coin": 2,  "weight": 40,  "ai": "chase", "color": "#16a085", "boss": false, "shape": "brute" },
+  "wraith": { "id": "wraith", "name": "幽灵怪", "hp": 18,   "speed": 70,  "damage": 6,  "size": 13, "exp": 3,   "coin": 2,  "weight": 45,  "ai": "chase", "color": "#2ecc71", "boss": false, "shape": "wraith" },
+  "swift":  { "id": "swift",  "name": "疾风怪", "hp": 9,    "speed": 140, "damage": 5,  "size": 9,  "exp": 2,   "coin": 1,  "weight": 50,  "ai": "chase", "color": "#f1c40f", "boss": false, "shape": "swift" },
+  "elite2": { "id": "elite2", "name": "石卫",   "hp": 400,  "speed": 35,  "damage": 18, "size": 26, "exp": 40,  "coin": 12, "weight": 8,   "ai": "chase", "color": "#2980b9", "boss": false, "elite": true, "shape": "stone" },
+  "elite3": { "id": "elite3", "name": "腐蚀者", "hp": 700,  "speed": 40,  "damage": 25, "size": 30, "exp": 70,  "coin": 20, "weight": 6,   "ai": "chase", "color": "#e84393", "boss": false, "elite": true, "shape": "corrode" },
+  "boss1":  { "id": "boss1",  "name": "尸潮领主", "hp": 2000, "speed": 40, "damage": 20, "size": 40, "exp": 100, "coin": 50, "weight": 0,   "ai": "chase", "color": "#c0392b", "boss": true, "shape": "boss" },
+  "boss2":  { "id": "boss2",  "name": "骨王",     "hp": 4000, "speed": 50, "damage": 28, "size": 46, "exp": 200, "coin": 80, "weight": 0,   "ai": "chase", "color": "#ecf0f1", "boss": true, "shape": "boss" },
+  "boss3":  { "id": "boss3",  "name": "终焉之主", "hp": 9000, "speed": 55, "damage": 40, "size": 60, "exp": 500, "coin": 200,"weight": 0,   "ai": "chase", "color": "#2c3e50", "boss": true, "shape": "boss" }
+}

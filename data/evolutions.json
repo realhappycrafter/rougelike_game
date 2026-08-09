@@ -1,0 +1,10 @@
+{
+  "infinite_knife": {
+    "result": "infinite_knife", "weapon": "knife", "passive": "power",
+    "name": "无尽刀雨", "desc": "飞刀满级 + 力量护腕满级 → 弹道 +5，伤害大幅提升"
+  },
+  "holy_whip": {
+    "result": "holy_whip", "weapon": "whip", "passive": "magnet",
+    "name": "圣鞭", "desc": "鞭子满级 + 磁铁满级 → 全向鞭打 + 穿透"
+  }
+}

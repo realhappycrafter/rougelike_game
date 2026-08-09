@@ -1,0 +1,44 @@
+{
+  "knife": {
+    "id": "knife", "name": "飞刀", "type": "projectile",
+    "damage": 10, "cooldown": 0.5, "count": 1, "projectile_speed": 430,
+    "pierce": 0, "area": 1.0, "knockback": 30, "duration": 0,
+    "max_level": 8, "evolution": "infinite_knife",
+    "desc": "自动射向最近的敌人",
+    "visual": {"shape": "dart"},
+    "level_desc": ["连发次数 +1", "伤害 +5", "穿透 +1", "弹速 +60", "再连发 +1", "伤害 +8", "进化：无限飞刀"]
+  },
+  "magic_wand": {
+    "id": "magic_wand", "name": "魔杖", "type": "projectile",
+    "damage": 8, "cooldown": 1.1, "count": 1, "projectile_speed": 520,
+    "pierce": 1, "area": 1.0, "knockback": 20, "duration": 0,
+    "max_level": 8, "evolution": "",
+    "desc": "蓄力发射穿透魔法弹",
+    "visual": {"shape": "bolt"},
+    "level_desc": ["伤害 +4", "穿透 +1", "蓄力更快", "连发 +1", "伤害 +6", "穿透 +1", "终极魔法弹"]
+  },
+  "garlic": {
+    "id": "garlic", "name": "大蒜", "type": "aura",
+    "damage": 3, "cooldown": 0.4, "count": 1, "projectile_speed": 0,
+    "pierce": 0, "area": 1.0, "knockback": 0, "duration": 0,
+    "max_level": 8, "evolution": "",
+    "desc": "身边持续灼伤靠近的敌人",
+    "level_desc": ["灼伤伤害 +2", "范围 +0.3", "持续更久", "伤害 +3", "范围 +0.5", "灼烧加深", "焚尽领域"]
+  },
+  "bible": {
+    "id": "bible", "name": "圣经", "type": "orbit",
+    "damage": 7, "cooldown": 1.0, "count": 2, "projectile_speed": 0,
+    "pierce": 0, "area": 1.0, "knockback": 10, "duration": 0,
+    "max_level": 8, "evolution": "",
+    "desc": "环绕旋转的书页持续切割",
+    "level_desc": ["书页 +1", "旋转伤害 +3", "转速提升", "书页 +1", "伤害 +5", "范围扩大", "神圣书阵"]
+  },
+  "whip": {
+    "id": "whip", "name": "鞭子", "type": "orbit",
+    "damage": 15, "cooldown": 1.0, "count": 1, "projectile_speed": 0,
+    "pierce": 1, "area": 1.5, "knockback": 60, "duration": 0,
+    "max_level": 8, "evolution": "holy_whip",
+    "desc": "近身横扫，高击退",
+    "level_desc": ["伤害 +6", "横扫范围 +0.4", "击退 +20", "伤害 +10", "范围 +0.6", "击退 +30", "进化：神圣之鞭"]
+  }
+}

@@ -1,0 +1,10 @@
+# 跨平台统一换行符为 LF，避免 Windows/Mac/Linux 协作冲突
+* text=auto eol=lf
+
+# 二进制资源不转换
+*.png binary
+*.jpg binary
+*.ttf binary
+*.wasm binary
+*.ogg binary
+*.mp3 binary

@@ -1,0 +1,12 @@
+{
+  "armor":  { "id": "armor",  "name": "护甲甲胄", "stat": "armor",    "per_level": 1,    "max_level": 5, "desc": "+1 护甲（每点减伤 1）" },
+  "max_hp": { "id": "max_hp", "name": "黑心",     "stat": "max_hp",  "per_level": 20,   "max_level": 5, "desc": "+20 最大生命" },
+  "cooldown":{ "id": "cooldown","name": "冷却书", "stat": "cooldown", "per_level": 0.05, "max_level": 5, "desc": "-5% 冷却（上限 50%）" },
+  "magnet": { "id": "magnet", "name": "磁铁",     "stat": "pickup",   "per_level": 30,   "max_level": 5, "desc": "+30 拾取范围" },
+  "power":  { "id": "power",  "name": "力量护腕", "stat": "damage",   "per_level": 0.07, "max_level": 5, "desc": "+7% 伤害" },
+  "speed":  { "id": "speed",  "name": "疾行靴",   "stat": "speed",    "per_level": 8,    "max_level": 5, "desc": "+8 移动速度" },
+  "luck":   { "id": "luck",   "name": "幸运护符", "stat": "luck",     "per_level": 5,    "max_level": 5, "desc": "+5 幸运（提升高品质词条概率）" },
+  "crit":      { "id": "crit",      "name": "致命焦点", "stat": "crit",       "per_level": 0.05, "max_level": 5, "desc": "+5% 暴击率" },
+  "crit_dmg":  { "id": "crit_dmg",  "name": "残暴印记", "stat": "crit_damage","per_level": 0.25, "max_level": 5, "desc": "+25% 暴击伤害" },
+  "lifesteal": { "id": "lifesteal", "name": "吸血之牙", "stat": "lifesteal",  "per_level": 0.02, "max_level": 5, "desc": "+2% 吸血" }
+}

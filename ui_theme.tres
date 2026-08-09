@@ -1,0 +1,14 @@
+[gd_resource type="Theme" load_steps=2 format=3]
+
+[ext_resource type="FontFile" path="res://fonts/simhei.ttf" id="1_sim"]
+
+[resource]
+
+default_font = ExtResource("1_sim")
+Label/font = ExtResource("1_sim")
+Button/font = ExtResource("1_sim")
+RichTextLabel/font = ExtResource("1_sim")
+LineEdit/font = ExtResource("1_sim")
+TextEdit/font = ExtResource("1_sim")
+OptionButton/font = ExtResource("1_sim")
+TabBar/font = ExtResource("1_sim")

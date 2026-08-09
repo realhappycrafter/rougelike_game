@@ -1,0 +1,31 @@
+# ===== Godot 4+ 官方忽略项 =====
+# 编辑器缓存（自动再生，体积大）
+.godot/
+
+# CSV 自动生成的翻译
+*.translation
+
+# Mono / C# 相关
+.mono/
+data_*/
+mono_crash.*.json
+
+# 系统/编辑器特定
+.directory
+
+# ===== 本项目构建产物（非源码，不入库） =====
+# Android 导出 APK
+build_android/
+# Web 导出产物
+web_build/
+# Gradle 自定义构建模板目录（由编辑器生成）
+android/
+
+# ===== 联机中继工具的二进制与日志（需另行下载/生成） =====
+tools/relay/cloudflared.exe
+tools/relay/_t.wasm
+*.log
+
+# ===== 操作系统垃圾 =====
+.DS_Store
+Thumbs.db

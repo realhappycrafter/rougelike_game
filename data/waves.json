@@ -1,0 +1,21 @@
+{
+  "base_spawn_rate": 2.0,
+  "spawn_growth": 0.5,
+  "enemy_scale_base": 1.0,
+  "enemy_scale_per_min": 0.35,
+  "phases": [
+    { "survival": 300, "boss": 180, "boss_enemy": "boss1" },
+    { "survival": 300, "boss": 180, "boss_enemy": "boss2" },
+    { "survival": 300, "boss": 180, "boss_enemy": "boss3" }
+  ],
+  "unlock_schedule": [
+    { "level": 1,  "enemy": "normal", "name": "小怪",   "kind": "normal", "silent": true },
+    { "level": 1,  "enemy": "fast",   "name": "快速怪", "kind": "normal", "silent": true },
+    { "level": 3,  "enemy": "elite",  "name": "精英怪", "kind": "elite" },
+    { "level": 8,  "enemy": "brute",  "name": "狂暴怪", "kind": "normal" },
+    { "level": 13, "enemy": "elite2", "name": "石卫",   "kind": "elite" },
+    { "level": 18, "enemy": "wraith", "name": "幽灵怪", "kind": "normal" },
+    { "level": 23, "enemy": "elite3", "name": "腐蚀者", "kind": "elite" },
+    { "level": 28, "enemy": "swift",  "name": "疾风怪", "kind": "normal" }
+  ]
+}

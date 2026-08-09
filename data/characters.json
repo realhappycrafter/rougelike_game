@@ -1,0 +1,6 @@
+{
+  "default": { "id": "default", "name": "幸存者", "hp": 100, "speed": 220, "start_weapon": "knife",  "color": "#33e0ff", "unlocked": true,  "cost": 0 },
+  "tank":    { "id": "tank",    "name": "硬汉",   "hp": 160, "speed": 180, "start_weapon": "whip",   "color": "#ffcc33", "unlocked": false, "cost": 200 },
+  "mage":    { "id": "mage",    "name": "法师",   "hp": 80,  "speed": 230, "start_weapon": "magic_wand", "color": "#aa66ff", "unlocked": false, "cost": 300 },
+  "rogue":   { "id": "rogue",   "name": "游侠",   "hp": 90,  "speed": 260, "start_weapon": "bible",  "color": "#66ff99", "unlocked": false, "cost": 400 }
+}

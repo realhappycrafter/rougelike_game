@@ -1,0 +1,20 @@
+extends Node
+## SpawnManager —— 时间驱动的波次生成调度（GDD §5.3）
+## 以 run_time 为唯一变量：持续生成小怪 + 定时解锁/倍率/Boss 事件。
+
+var unlocked = {}
+var rate_mult = 1.0
+var spawn_accum = 0.0
+
+func reset() -> void:
+	unlocked = {}
+	rate_mult = 1.0
+	spawn_accum = 0.0
+
+func update(t: float, delta: float, world, spawner) -> void:
+	# 普通怪持续生成（rate_mult 由 main 按阶段设置；难度系数来自 GameManager.diff）
+	var rate = float(DataTables.waves["base_spawn_rate"]) * (1.0 + t / 60.0 * float(DataTables.waves["spawn_growth"])) * rate_mult * GameManager.diff.spawn
+	spawn_accum += rate * delta
+	while spawn_accum >= 1.0:
+		spawn_accum -= 1.0
+		spawner.spawn_random_enemy()

@@ -1,0 +1,8 @@
+{
+  "levelup": { "id": "levelup", "name": "经验宝箱", "reward": "levelup", "desc": "按品质给予经验（白5%/绿10%/蓝20%/紫40%/金70%/红直接升级）" },
+  "speed":   { "id": "speed",   "name": "疾风宝箱", "reward": "speed",   "value": 8,    "desc": "移动速度 +8" },
+  "maxhp":   { "id": "maxhp",   "name": "生命宝箱", "reward": "maxhp",   "value": 20,   "desc": "最大生命 +20" },
+  "luck":    { "id": "luck",    "name": "幸运宝箱", "reward": "luck",    "value": 5,    "desc": "幸运 +5" },
+  "damage":  { "id": "damage",  "name": "力量宝箱", "reward": "damage",  "value": 0.07, "desc": "伤害 +7%" },
+  "gold":    { "id": "gold",    "name": "金币宝箱", "reward": "gold",    "value": 50,   "desc": "金币 +50" }
+}
