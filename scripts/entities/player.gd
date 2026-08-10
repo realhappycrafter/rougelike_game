@@ -73,6 +73,46 @@ func setup_character(c: Dictionary) -> void:
 	if DataTables.weapons.has(wid):
 		_equip_weapon(wid, 1)
 
+## 应用局外强化（meta_upgrades）：在 setup_character 之后调用，
+## 把存档中的多级属性加成叠加到基础值上（金币/经验乘数由 GameManager 单独处理）。
+func apply_meta_upgrades(meta: Dictionary) -> void:
+	if meta == null:
+		return
+	for id in DataTables.meta_upgrades.keys():
+		var lvl = int(meta.get(id, 0))
+		if lvl <= 0:
+			continue
+		var u = DataTables.meta_upgrades[id]
+		var amt = float(u["per_level"]) * float(lvl)
+		match u["stat"]:
+			"max_hp":
+				base_max_hp += amt
+				max_hp += amt
+				hp += amt
+			"damage":
+				damage_bonus += amt
+			"speed":
+				base_speed += amt
+				speed += amt
+			"pickup":
+				pickup_range += amt
+			"cooldown":
+				cooldown_reduction = min(0.5, cooldown_reduction + amt)
+			"armor":
+				armor += amt
+			"luck":
+				luck += amt
+			"crit":
+				crit_chance = min(1.0, crit_chance + amt)
+			"crit_dmg":
+				crit_dmg_bonus += amt
+			"lifesteal":
+				lifesteal = min(1.0, lifesteal + amt)
+			"revives":
+				revives += int(amt)
+			# gold_gain / exp_gain 为全局乘算，由 GameManager 处理，此处跳过
+	queue_redraw()
+
 func _equip_weapon(wid: String, lv: int) -> void:
 	var w = Node2D.new()
 	w.set_script(WeaponBaseScript)

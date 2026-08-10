@@ -9,5 +9,26 @@
   "elite3": { "id": "elite3", "name": "腐蚀者", "hp": 700,  "speed": 40,  "damage": 25, "size": 30, "exp": 70,  "coin": 20, "weight": 6,   "ai": "chase", "color": "#e84393", "boss": false, "elite": true, "shape": "corrode" },
   "boss1":  { "id": "boss1",  "name": "尸潮领主", "hp": 2000, "speed": 40, "damage": 20, "size": 40, "exp": 100, "coin": 50, "weight": 0,   "ai": "chase", "color": "#c0392b", "boss": true, "shape": "boss" },
   "boss2":  { "id": "boss2",  "name": "骨王",     "hp": 4000, "speed": 50, "damage": 28, "size": 46, "exp": 200, "coin": 80, "weight": 0,   "ai": "chase", "color": "#ecf0f1", "boss": true, "shape": "boss" },
-  "boss3":  { "id": "boss3",  "name": "终焉之主", "hp": 9000, "speed": 55, "damage": 40, "size": 60, "exp": 500, "coin": 200,"weight": 0,   "ai": "chase", "color": "#2c3e50", "boss": true, "shape": "boss" }
+  "boss3":  { "id": "boss3",  "name": "终焉之主", "hp": 9000, "speed": 55, "damage": 40, "size": 60, "exp": 500, "coin": 200,"weight": 0,   "ai": "chase", "color": "#2c3e50", "boss": true, "shape": "boss" },
+
+  "dlu_normal": { "id": "dlu_normal", "name": "蓝银草傀儡", "hp": 12, "speed": 50, "damage": 5,  "size": 12, "exp": 1,  "coin": 1,  "weight": 100, "ai": "chase", "color": "#2e86de", "boss": false, "shape": "imp" },
+  "dlu_fast":   { "id": "dlu_fast",   "name": "曼陀罗蛇",   "hp": 7,  "speed": 120,"damage": 4,  "size": 9,  "exp": 2,  "coin": 1,  "weight": 60,  "ai": "chase", "color": "#8e44ad", "boss": false, "shape": "fast" },
+  "dlu_spider": { "id": "dlu_spider", "name": "人面魔蛛",   "hp": 22, "speed": 60, "damage": 7,  "size": 14, "exp": 3,  "coin": 2,  "weight": 45,  "ai": "chase", "color": "#c0392b", "boss": false, "shape": "wraith" },
+  "dlu_elite":  { "id": "dlu_elite",  "name": "邪魂师",     "hp": 140,"speed": 50, "damage": 13, "size": 22, "exp": 22, "coin": 6,  "weight": 12,  "ai": "chase", "color": "#713093", "boss": false, "elite": true, "shape": "elite" },
+  "dlu_ape":    { "id": "dlu_ape",    "name": "泰坦巨猿",   "hp": 600,"speed": 38, "damage": 20, "size": 30, "exp": 50, "coin": 14, "weight": 7,   "ai": "chase", "color": "#e67e22", "boss": false, "elite": true, "shape": "brute" },
+  "dlu_tiger":  { "id": "dlu_tiger",  "name": "暗魔邪神虎", "hp": 320,"speed": 95, "damage": 16, "size": 22, "exp": 35, "coin": 10, "weight": 9,   "ai": "chase", "color": "#d35400", "boss": false, "elite": true, "shape": "swift" },
+  "dlu_whale":  { "id": "dlu_whale",  "name": "深海魔鲸",   "hp": 900,"speed": 30, "damage": 24, "size": 34, "exp": 70, "coin": 20, "weight": 6,   "ai": "chase", "color": "#16a085", "boss": false, "elite": true, "shape": "stone" },
+  "dlu_boss1":  { "id": "dlu_boss1",  "name": "武魂殿教皇", "hp": 3000,"speed": 42, "damage": 22, "size": 42, "exp": 120,"coin": 60, "weight": 0,   "ai": "chase", "color": "#f1c40f", "boss": true, "shape": "boss" },
+  "dlu_boss2":  { "id": "dlu_boss2",  "name": "罗刹神",     "hp": 6000,"speed": 52, "damage": 30, "size": 48, "exp": 220,"coin": 90, "weight": 0,   "ai": "chase", "color": "#c0392b", "boss": true, "shape": "boss" },
+  "dlu_boss3":  { "id": "dlu_boss3",  "name": "修罗神王",   "hp": 12000,"speed": 58,"damage": 42, "size": 62, "exp": 520,"coin": 220,"weight": 0,   "ai": "chase", "color": "#8e44ad", "boss": true, "shape": "boss" },
+
+  "xx_fox":       { "id": "xx_fox",       "name": "妖狐",     "hp": 9,  "speed": 130,"damage": 5,  "size": 9,  "exp": 2,  "coin": 1,  "weight": 60, "ai": "chase", "color": "#e67e22", "boss": false, "shape": "fast" },
+  "xx_tiger":     { "id": "xx_tiger",     "name": "妖虎",     "hp": 28, "speed": 70, "damage": 9,  "size": 16, "exp": 3,  "coin": 2,  "weight": 40, "ai": "chase", "color": "#d35400", "boss": false, "shape": "brute" },
+  "xx_cultivator": { "id": "xx_cultivator", "name": "邪修",     "hp": 16, "speed": 65, "damage": 6,  "size": 13, "exp": 3,  "coin": 2,  "weight": 45, "ai": "chase", "color": "#8e44ad", "boss": false, "shape": "wraith" },
+  "xx_enforcer":  { "id": "xx_enforcer",  "name": "宗门执法", "hp": 450,"speed": 45, "damage": 18, "size": 26, "exp": 40, "coin": 12, "weight": 8,  "ai": "chase", "color": "#2980b9", "boss": false, "elite": true, "shape": "elite" },
+  "xx_qiongqi":   { "id": "xx_qiongqi",   "name": "穷奇",     "hp": 700,"speed": 85, "damage": 22, "size": 28, "exp": 60, "coin": 16, "weight": 7,  "ai": "chase", "color": "#27ae60", "boss": false, "elite": true, "shape": "swift" },
+  "xx_wu":        { "id": "xx_wu",        "name": "巫族战魂", "hp": 950,"speed": 38, "damage": 26, "size": 32, "exp": 80, "coin": 22, "weight": 6,  "ai": "chase", "color": "#16a085", "boss": false, "elite": true, "shape": "stone" },
+  "xx_boss1":     { "id": "xx_boss1",     "name": "渡劫天魔", "hp": 5000,"speed": 48, "damage": 26, "size": 46, "exp": 200,"coin": 80, "weight": 0,  "ai": "chase", "color": "#c0392b", "boss": true, "shape": "boss" },
+  "xx_boss2":     { "id": "xx_boss2",     "name": "仙门老祖", "hp": 9000,"speed": 56, "damage": 34, "size": 54, "exp": 300,"coin": 120,"weight": 0,  "ai": "chase", "color": "#f1c40f", "boss": true, "shape": "boss" },
+  "xx_boss3":     { "id": "xx_boss3",     "name": "域外天魔皇","hp": 16000,"speed": 62,"damage": 46, "size": 66, "exp": 600,"coin": 260,"weight": 0,  "ai": "chase", "color": "#8e44ad", "boss": true, "shape": "boss" }
 }

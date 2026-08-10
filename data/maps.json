@@ -1,0 +1,90 @@
+{
+  "zombie": {
+    "id": "zombie",
+    "order": 1,
+    "name": "丧尸末世",
+    "world": "诸天万界 · 第一界",
+    "story_intro": "诸天万界，第一界·丧尸末世。\n文明在嘶吼中崩塌，血肉成了唯一流通的货币。\n你坠入这座死城，唯一的出路，是活过二十分钟。",
+    "story_outro": "尸潮退去，残阳如血。\n你活下来了——但诸天的裂隙，才刚刚撕开。",
+    "floor": { "base": [0.08, 0.06, 0.10], "grid": [0.15, 0.12, 0.20], "border": [0.62, 0.30, 0.58] },
+    "enemy_scale_base": 1.0,
+    "enemy_scale_per_min": 0.35,
+    "base_spawn_rate": 2.0,
+    "spawn_growth": 0.5,
+    "roster": ["normal", "fast", "elite", "brute", "wraith", "swift", "elite2", "elite3"],
+    "phases": [
+      { "survival": 300, "boss": 180, "boss_enemy": "boss1" },
+      { "survival": 300, "boss": 180, "boss_enemy": "boss2" },
+      { "survival": 300, "boss": 180, "boss_enemy": "boss3" }
+    ],
+    "unlock_schedule": [
+      { "level": 1,  "enemy": "normal", "name": "丧尸",   "kind": "normal", "silent": true },
+      { "level": 1,  "enemy": "fast",   "name": "疾行尸", "kind": "normal", "silent": true },
+      { "level": 3,  "enemy": "elite",  "name": "暴尸",   "kind": "elite" },
+      { "level": 8,  "enemy": "brute",  "name": "变异体", "kind": "normal" },
+      { "level": 13, "enemy": "elite2", "name": "尸王",   "kind": "elite" },
+      { "level": 18, "enemy": "wraith", "name": "怨灵",   "kind": "normal" },
+      { "level": 23, "enemy": "elite3", "name": "腐蚀者", "kind": "elite" },
+      { "level": 28, "enemy": "swift",  "name": "赤瞳尸", "kind": "normal" }
+    ]
+  },
+
+  "douluo": {
+    "id": "douluo",
+    "order": 2,
+    "name": "斗罗世界",
+    "world": "诸天万界 · 第二界",
+    "story_intro": "第二界·斗罗世界。\n这里以武魂为尊，魂兽横行，宗门林立。\n穿越而来的你，唯有在魂潮中，杀出一条成神之路。",
+    "story_outro": "武魂殿在身后崩塌。\n你握紧染血的昊天锤，下一界的气息，已在虚空深处搏动。",
+    "floor": { "base": [0.05, 0.09, 0.13], "grid": [0.12, 0.20, 0.28], "border": [0.30, 0.62, 0.78] },
+    "enemy_scale_base": 1.15,
+    "enemy_scale_per_min": 0.40,
+    "base_spawn_rate": 2.2,
+    "spawn_growth": 0.55,
+    "roster": ["dlu_normal", "dlu_fast", "dlu_spider", "dlu_elite", "dlu_ape", "dlu_tiger", "dlu_whale"],
+    "phases": [
+      { "survival": 300, "boss": 180, "boss_enemy": "dlu_boss1" },
+      { "survival": 300, "boss": 180, "boss_enemy": "dlu_boss2" },
+      { "survival": 300, "boss": 180, "boss_enemy": "dlu_boss3" }
+    ],
+    "unlock_schedule": [
+      { "level": 1,  "enemy": "dlu_normal", "name": "蓝银草傀儡", "kind": "normal", "silent": true },
+      { "level": 1,  "enemy": "dlu_fast",   "name": "曼陀罗蛇",   "kind": "normal", "silent": true },
+      { "level": 3,  "enemy": "dlu_spider", "name": "人面魔蛛",   "kind": "normal" },
+      { "level": 5,  "enemy": "dlu_elite",  "name": "邪魂师",     "kind": "elite" },
+      { "level": 9,  "enemy": "dlu_ape",    "name": "泰坦巨猿",   "kind": "elite" },
+      { "level": 14, "enemy": "dlu_tiger",  "name": "暗魔邪神虎", "kind": "elite" },
+      { "level": 19, "enemy": "dlu_whale",  "name": "深海魔鲸",   "kind": "elite" },
+      { "level": 24, "enemy": "dlu_spider", "name": "人面魔蛛·群", "kind": "normal", "silent": true }
+    ]
+  },
+
+  "xiuxian": {
+    "id": "xiuxian",
+    "order": 3,
+    "name": "修仙界",
+    "world": "诸天万界 · 第三界",
+    "story_intro": "第三界·修仙界。\n仙门高悬，妖魔横行，渡劫飞升者凤毛麟角。\n你以凡躯闯入这方天地，于劫雷与剑光中，证一道长生。",
+    "story_outro": "天魔溃散，仙门洞开。\n三界已过，而诸天之外，仍有万界在等你。",
+    "floor": { "base": [0.07, 0.11, 0.08], "grid": [0.16, 0.26, 0.18], "border": [0.55, 0.75, 0.45] },
+    "enemy_scale_base": 1.3,
+    "enemy_scale_per_min": 0.45,
+    "base_spawn_rate": 2.4,
+    "spawn_growth": 0.6,
+    "roster": ["xx_fox", "xx_tiger", "xx_cultivator", "xx_enforcer", "xx_qiongqi", "xx_wu"],
+    "phases": [
+      { "survival": 300, "boss": 180, "boss_enemy": "xx_boss1" },
+      { "survival": 300, "boss": 180, "boss_enemy": "xx_boss2" },
+      { "survival": 300, "boss": 180, "boss_enemy": "xx_boss3" }
+    ],
+    "unlock_schedule": [
+      { "level": 1,  "enemy": "xx_fox",       "name": "妖狐",     "kind": "normal", "silent": true },
+      { "level": 1,  "enemy": "xx_cultivator","name": "邪修",     "kind": "normal", "silent": true },
+      { "level": 3,  "enemy": "xx_tiger",     "name": "妖虎",     "kind": "normal" },
+      { "level": 5,  "enemy": "xx_enforcer",  "name": "宗门执法", "kind": "elite" },
+      { "level": 9,  "enemy": "xx_qiongqi",   "name": "穷奇",     "kind": "elite" },
+      { "level": 14, "enemy": "xx_wu",        "name": "巫族战魂", "kind": "elite" },
+      { "level": 20, "enemy": "xx_tiger",     "name": "妖虎·群",  "kind": "normal", "silent": true }
+    ]
+  }
+}

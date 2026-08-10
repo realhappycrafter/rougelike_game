@@ -47,6 +47,7 @@ func _ready():
 	_vs = get_viewport_rect().size
 	if _vs.x < 10:
 		_vs = Vector2(1920, 1080)
+	_build_story_overlay()
 
 ## 视口缩放因子：以 1920 宽为设计基准，限制范围避免极端过大/过小
 func _f() -> float:
@@ -380,6 +381,56 @@ func show_perf_warning(msg: String) -> void:
 	warn_label.visible = true
 	warn_timer = 5.0
 
+## ---- 章节旁白（诸天万界世界观，轻量呈现）----
+## 非阻塞全屏 overlay：自动淡出，不拦截输入（点击可穿透）。
+var story_panel = null
+var story_title = null
+var story_body = null
+var story_timer: float = 0.0
+
+func _build_story_overlay() -> void:
+	var f = _f()
+	var dim = ColorRect.new()
+	dim.color = Color(0.02, 0.02, 0.05, 0.55)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dim.visible = false
+	add_child(dim)
+	var panel = Panel.new()
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.size = Vector2(900, 360) * f
+	panel.position = (_vs - panel.size) / 2.0
+	dim.add_child(panel)
+	var title = Label.new()
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", int(26 * f))
+	title.position = Vector2(20 * f, 16 * f)
+	title.size = Vector2(860 * f, 70 * f)
+	panel.add_child(title)
+	var body = Label.new()
+	body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	body.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body.add_theme_font_size_override("font_size", int(20 * f))
+	body.position = Vector2(30 * f, 90 * f)
+	body.size = Vector2(840 * f, 250 * f)
+	panel.add_child(body)
+	story_panel = dim
+	story_title = title
+	story_body = body
+
+## world/title/body：开场序章与通关尾声旁白
+func show_story(world: String, title: String, body: String) -> void:
+	if story_panel == null:
+		_build_story_overlay()
+	if story_title == null:
+		return
+	story_title.text = (world + "\n" if world != "" else "") + title
+	story_body.text = body
+	story_panel.visible = true
+	story_panel.modulate.a = 1.0
+	story_timer = 7.0
+
 ## ---- 事件信息框 ----
 ## big=true 走顶部大横幅（Boss 战等），否则走底部滚动日志（宝箱/新怪加入等）
 func info(text: String, color: Color = Color(0.9, 0.9, 0.95), big: bool = false) -> void:
@@ -414,6 +465,12 @@ func set_stage(idx: int, state: String) -> void:
 
 ## 每帧淡出横幅与滚动日志并重新布局
 func _update_info_fx(delta: float) -> void:
+	if story_panel != null and story_panel.visible:
+		story_timer -= delta
+		if story_timer <= 0.0:
+			story_panel.visible = false
+		else:
+			story_panel.modulate.a = clamp(story_timer / 1.5, 0.0, 1.0)
 	if banner != null and banner.visible:
 		banner_timer -= delta
 		if banner_timer <= 0.0:

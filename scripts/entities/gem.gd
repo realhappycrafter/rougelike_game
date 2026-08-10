@@ -54,7 +54,7 @@ func collect() -> void:
 		"exp":
 			GameManager.add_exp(value)
 		"coin":
-			GameManager.gold += value
+			GameManager.gold += int(round(float(value) * GameManager.meta_gold_mult))
 		"heal":
 			if GameManager.player:
 				var pl = GameManager.player

@@ -1,0 +1,15 @@
+{
+  "max_hp":   { "id": "max_hp",   "name": "生命强化", "desc": "每级 +20 初始生命上限", "stat": "max_hp",   "per_level": 20,   "max_level": 10, "cost_base": 50,  "cost_growth": 1.45 },
+  "damage":   { "id": "damage",   "name": "锋锐",     "desc": "每级 +5% 伤害",        "stat": "damage",   "per_level": 0.05, "max_level": 10, "cost_base": 60,  "cost_growth": 1.5 },
+  "speed":    { "id": "speed",    "name": "疾步",     "desc": "每级 +8 移动速度",     "stat": "speed",    "per_level": 8,    "max_level": 10, "cost_base": 40,  "cost_growth": 1.4 },
+  "pickup":   { "id": "pickup",   "name": "磁力",     "desc": "每级 +12 拾取范围",    "stat": "pickup",   "per_level": 12,   "max_level": 8,  "cost_base": 30,  "cost_growth": 1.4 },
+  "cooldown": { "id": "cooldown", "name": "急速",     "desc": "每级 +3% 冷却缩减",    "stat": "cooldown", "per_level": 0.03, "max_level": 10, "cost_base": 70,  "cost_growth": 1.5 },
+  "armor":    { "id": "armor",    "name": "坚甲",     "desc": "每级 +1 护甲",         "stat": "armor",    "per_level": 1,    "max_level": 8,  "cost_base": 50,  "cost_growth": 1.5 },
+  "luck":     { "id": "luck",     "name": "气运",     "desc": "每级 +5% 幸运",        "stat": "luck",     "per_level": 0.05, "max_level": 10, "cost_base": 50,  "cost_growth": 1.5 },
+  "crit":     { "id": "crit",     "name": "会心",     "desc": "每级 +3% 暴击率",      "stat": "crit",     "per_level": 0.03, "max_level": 10, "cost_base": 80,  "cost_growth": 1.5 },
+  "crit_dmg": { "id": "crit_dmg", "name": "致命",     "desc": "每级 +10% 暴击伤害",   "stat": "crit_dmg", "per_level": 0.10, "max_level": 10, "cost_base": 80,  "cost_growth": 1.5 },
+  "lifesteal": { "id": "lifesteal", "name": "嗜血",     "desc": "每级 +2% 吸血",        "stat": "lifesteal", "per_level": 0.02, "max_level": 8,  "cost_base": 90,  "cost_growth": 1.6 },
+  "revives":  { "id": "revives",  "name": "不屈",     "desc": "每级 +1 次复活",        "stat": "revives",  "per_level": 1,    "max_level": 3,  "cost_base": 300, "cost_growth": 2.0 },
+  "gold_gain": { "id": "gold_gain", "name": "财运",     "desc": "每级 +8% 金币获取",    "stat": "gold_gain", "per_level": 0.08, "max_level": 10, "cost_base": 60,  "cost_growth": 1.5 },
+  "exp_gain": { "id": "exp_gain", "name": "悟性",     "desc": "每级 +8% 经验获取",    "stat": "exp_gain", "per_level": 0.08, "max_level": 10, "cost_base": 60,  "cost_growth": 1.5 }
+}

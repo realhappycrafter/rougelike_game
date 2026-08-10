@@ -66,10 +66,14 @@ func generate(player) -> Array:
 
 	# 武器选项（无品质）
 	for wid in DataTables.weapons.keys():
+		# 按地图过滤：maps 为空=全图可用；非空=仅含当前 map_id 时可用
+		var wdata = DataTables.weapons[wid]
+		var maps_allowed = wdata.get("maps", [])
+		if maps_allowed.size() > 0 and not maps_allowed.has(GameManager.map_id):
+			continue
 		if held_weapons.has(wid):
 			var lv = player.weapons[wid].level
 			if lv < DataTables.weapons[wid].max_level:
-				var wdata = DataTables.weapons[wid]
 				var next_lv = lv + 1
 				var extra = ""
 				if wdata.has("level_desc") and (next_lv - 2) >= 0 and (next_lv - 2) < wdata.level_desc.size():

@@ -9,7 +9,9 @@ var data = {
 	"slots": {},        # id -> {difficulty, best_time, level, created}
 	"active_slot": "",  # 当前选中的槽位
 	"global_gold": 0,   # 全局元货币（解锁用）
-	"settings": {"music_vol": 0.8, "sfx_vol": 0.8}
+	"settings": {"music_vol": 0.8, "sfx_vol": 0.8},
+	"meta_upgrades": {},            # id -> 已购等级
+	"map_progress": {"unlocked": ["zombie"], "cleared": []}  # 顺序解锁
 }
 
 func _ready():
@@ -39,6 +41,14 @@ func load_data() -> void:
 		data["global_gold"] = 0
 	if not data.has("settings"):
 		data["settings"] = {"music_vol": 0.8, "sfx_vol": 0.8}
+	if not data.has("meta_upgrades"):
+		data["meta_upgrades"] = {}
+	if not data.has("map_progress"):
+		data["map_progress"] = {"unlocked": ["zombie"], "cleared": []}
+	if not data["map_progress"].has("unlocked"):
+		data["map_progress"]["unlocked"] = ["zombie"]
+	if not data["map_progress"].has("cleared"):
+		data["map_progress"]["cleared"] = []
 
 func save_data() -> void:
 	var f = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
@@ -81,6 +91,10 @@ func set_active(id: String) -> void:
 		data.active_slot = id
 		save_data()
 
+## 当前选中的槽位 id（该字段存在 data 字典内，外部一律走此访问器）
+func get_active_slot() -> String:
+	return str(data["active_slot"])
+
 func get_slot(id: String) -> Dictionary:
 	if data.slots.has(id):
 		return data.slots[id]
@@ -102,12 +116,72 @@ func record_run(slot: String, time: float, level: int) -> void:
 ## ---- 元货币 ----
 func add_gold(g: int) -> void:
 	data["global_gold"] = int(data["global_gold"]) + int(g)
-	if GameManager.run_time > float(data.slots.get(data.active_slot, {}).get("best_time", 0)):
-		pass
 	save_data()
 
 func get_gold() -> int:
 	return int(data["global_gold"])
+
+## ---- 局外强化（元升级）----
+## 价格公式：floor(cost_base * cost_growth^当前等级)
+## 全部已购元升级（id -> 等级），供 player.apply_meta_upgrades 使用
+func get_meta_upgrades() -> Dictionary:
+	return data["meta_upgrades"]
+
+func get_meta_level(id: String) -> int:
+	if data["meta_upgrades"].has(id):
+		return int(data["meta_upgrades"][id])
+	return 0
+
+func meta_upgrade_cost(id: String) -> int:
+	if not DataTables.meta_upgrades.has(id):
+		return 999999
+	var u = DataTables.meta_upgrades[id]
+	var lvl = get_meta_level(id)
+	if lvl >= int(u["max_level"]):
+		return -1  # 已满级
+	return int(floor(float(u["cost_base"]) * pow(float(u["cost_growth"]), float(lvl))))
+
+## 购买一级，成功返回 true（金币不足/满级返回 false）
+func buy_meta_upgrade(id: String) -> bool:
+	if not DataTables.meta_upgrades.has(id):
+		return false
+	var u = DataTables.meta_upgrades[id]
+	var lvl = get_meta_level(id)
+	if lvl >= int(u["max_level"]):
+		return false
+	var cost = meta_upgrade_cost(id)
+	if int(data["global_gold"]) < cost:
+		return false
+	data["global_gold"] = int(data["global_gold"]) - cost
+	data["meta_upgrades"][id] = lvl + 1
+	save_data()
+	return true
+
+## ---- 地图进度（顺序解锁）----
+func is_map_unlocked(id: String) -> bool:
+	return data["map_progress"]["unlocked"].has(id)
+
+func unlock_map(id: String) -> void:
+	if not data["map_progress"]["unlocked"].has(id):
+		data["map_progress"]["unlocked"].append(id)
+		save_data()
+
+## 标记通关：加入 cleared，并解锁下一 order 的地图
+func mark_map_cleared(id: String) -> void:
+	if not data["map_progress"]["cleared"].has(id):
+		data["map_progress"]["cleared"].append(id)
+	if DataTables.maps.has(id):
+		var next_order = int(DataTables.maps[id]["order"]) + 1
+		for mid in DataTables.maps.keys():
+			if int(DataTables.maps[mid]["order"]) == next_order:
+				if not data["map_progress"]["unlocked"].has(mid):
+					data["map_progress"]["unlocked"].append(mid)
+				break
+	save_data()
+
+## 是否已通关
+func is_map_cleared(id: String) -> bool:
+	return data["map_progress"]["cleared"].has(id)
 
 ## ---- 设置 ----
 func set_setting(key: String, value) -> void:

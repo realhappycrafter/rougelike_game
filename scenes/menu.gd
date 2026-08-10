@@ -12,6 +12,10 @@ var slot_panel: Panel
 var difficulty_panel: Panel
 var settings_panel: Panel
 var saves_panel: Panel
+var map_panel: Panel
+var meta_panel: Panel
+var meta_list: VBoxContainer
+var meta_status: Label
 var pending_new_slot: String = ""
 var current_view: String = "main"
 
@@ -37,6 +41,10 @@ func _on_size_changed():
 		refresh_slots()
 	elif current_view == "saves":
 		refresh_saves()
+	elif current_view == "map":
+		refresh_maps()
+	elif current_view == "meta":
+		refresh_meta()
 
 func _build_all():
 	for c in get_children():
@@ -49,6 +57,8 @@ func _build_all():
 	_build_difficulty_panel()
 	_build_settings_panel()
 	_build_saves_panel()
+	_build_map_panel()
+	_build_meta_panel()
 
 func _build_bg():
 	bg = DecorBgScript.new()
@@ -70,9 +80,9 @@ func _build_title():
 
 func _build_main_buttons():
 	var f = _f()
-	var names = ["开始游戏", "设置", "存档管理"]
-	var actions = [_on_start, _on_settings, _on_saves]
-	for i in range(3):
+	var names = ["开始游戏", "局外强化", "设置", "存档管理"]
+	var actions = [_on_start, _on_meta, _on_settings, _on_saves]
+	for i in range(names.size()):
 		var b = Button.new()
 		b.text = names[i]
 		b.add_theme_font_size_override("font_size", int(28 * f))
@@ -89,6 +99,8 @@ func show_only(which: String) -> void:
 	difficulty_panel.visible = (which == "difficulty")
 	settings_panel.visible = (which == "settings")
 	saves_panel.visible = (which == "saves")
+	map_panel.visible = (which == "map")
+	meta_panel.visible = (which == "meta")
 	for b in main_buttons:
 		b.visible = (which == "main")
 	title.visible = (which == "main")
@@ -152,7 +164,8 @@ func refresh_slots():
 func _on_slot_chosen(sid: String):
 	SaveManager.set_active(sid)
 	GameManager.set_difficulty(SaveManager.get_slot(sid).difficulty)
-	get_tree().change_scene_to_file("res://scenes/main.tscn")
+	refresh_maps()
+	show_only("map")
 
 func _on_new_slot():
 	pending_new_slot = "save_" + str(Time.get_ticks_msec())
@@ -167,7 +180,8 @@ func _on_difficulty_chosen(id: String):
 	SaveManager.set_active(sid)
 	GameManager.set_difficulty(id)
 	pending_new_slot = ""
-	get_tree().change_scene_to_file("res://scenes/main.tscn")
+	refresh_maps()
+	show_only("map")
 
 func _build_difficulty_panel():
 	var f = _f()
@@ -205,6 +219,144 @@ func _build_difficulty_panel():
 
 func _on_back():
 	show_only("main")
+
+## ---------- 地图选择（诸天万界·顺序解锁） ----------
+func _build_map_panel():
+	var f = _f()
+	map_panel = Panel.new()
+	map_panel.visible = false
+	map_panel.size = Vector2(680 * f, 500 * f)
+	map_panel.position = get_viewport_rect().size / 2.0 - map_panel.size / 2.0
+	add_child(map_panel)
+	var t = Label.new()
+	t.text = "选择世界（诸天万界）"
+	t.position = Vector2(20 * f, 12 * f)
+	t.add_theme_font_size_override("font_size", int(30 * f))
+	map_panel.add_child(t)
+	var back = Button.new()
+	back.text = "返回"
+	back.position = Vector2(20 * f, 450 * f)
+	back.size = Vector2(100 * f, 36 * f)
+	back.add_theme_font_size_override("font_size", int(20 * f))
+	back.connect("pressed", _on_map_back)
+	map_panel.add_child(back)
+
+func _on_map_back():
+	refresh_slots()
+	show_only("slot")
+
+## 按 order 排序取地图 id 列表
+func _sorted_map_ids() -> Array:
+	var ids = DataTables.maps.keys()
+	ids.sort_custom(func(a, b): return int(DataTables.maps[a].get("order", 99)) < int(DataTables.maps[b].get("order", 99)))
+	return ids
+
+func refresh_maps():
+	var f = _f()
+	for c in map_panel.get_children():
+		if c.name.begins_with("map_"):
+			c.queue_free()
+	var i = 0
+	for mid in _sorted_map_ids():
+		var m = DataTables.maps[mid]
+		var unlocked = SaveManager.is_map_unlocked(mid)
+		var cleared = SaveManager.is_map_cleared(mid)
+		var b = Button.new()
+		b.name = "map_" + mid
+		var mark = ""
+		if cleared:
+			mark = "  [已通关]"
+		elif not unlocked:
+			mark = "  [未解锁：需先通关前一世界]"
+		# 难度提示：以敌人基础倍率与刷新速率体现递进
+		var tip = "敌强×%.2f ｜刷新×%.2f" % [
+			float(m.get("enemy_scale_base", 1.0)), float(m.get("base_spawn_rate", 2.0))]
+		b.text = "第%d界 · %s\n%s%s" % [int(m.get("order", i + 1)), str(m.get("name", mid)), tip, mark]
+		b.position = Vector2(20 * f, (56 + i * 88) * f)
+		b.size = Vector2(640 * f, 76 * f)
+		b.add_theme_font_size_override("font_size", int(21 * f))
+		b.disabled = not unlocked
+		if unlocked:
+			b.connect("pressed", _on_map_chosen.bind(mid))
+		map_panel.add_child(b)
+		i += 1
+
+func _on_map_chosen(mid: String):
+	GameManager.set_map(mid)
+	get_tree().change_scene_to_file("res://scenes/main.tscn")
+
+## ---------- 局外强化商店（金币买初始属性） ----------
+func _on_meta():
+	refresh_meta()
+	show_only("meta")
+
+func _build_meta_panel():
+	var f = _f()
+	meta_panel = Panel.new()
+	meta_panel.visible = false
+	meta_panel.size = Vector2(760 * f, 620 * f)
+	meta_panel.position = get_viewport_rect().size / 2.0 - meta_panel.size / 2.0
+	add_child(meta_panel)
+	var t = Label.new()
+	t.text = "局外强化（提升每局初始属性）"
+	t.position = Vector2(20 * f, 12 * f)
+	t.add_theme_font_size_override("font_size", int(30 * f))
+	meta_panel.add_child(t)
+	meta_status = Label.new()
+	meta_status.text = "金币：%d" % SaveManager.get_gold()
+	meta_status.position = Vector2(20 * f, 52 * f)
+	meta_status.size = Vector2(700 * f, 28 * f)
+	meta_status.add_theme_font_size_override("font_size", int(22 * f))
+	meta_status.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35))
+	meta_panel.add_child(meta_status)
+	var sc = ScrollContainer.new()
+	sc.name = "meta_scroll"
+	sc.position = Vector2(16 * f, 88 * f)
+	sc.size = Vector2(728 * f, 470 * f)
+	meta_panel.add_child(sc)
+	meta_list = VBoxContainer.new()
+	meta_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	meta_list.add_theme_constant_override("separation", int(6 * f))
+	sc.add_child(meta_list)
+	var back = Button.new()
+	back.text = "返回"
+	back.position = Vector2(20 * f, 570 * f)
+	back.size = Vector2(100 * f, 36 * f)
+	back.add_theme_font_size_override("font_size", int(20 * f))
+	back.connect("pressed", _on_back)
+	meta_panel.add_child(back)
+
+func refresh_meta():
+	if meta_list == null:
+		return
+	var f = _f()
+	for c in meta_list.get_children():
+		c.queue_free()
+	var gold = SaveManager.get_gold()
+	meta_status.text = "金币：%d" % gold
+	var ids = DataTables.meta_upgrades.keys()
+	ids.sort()
+	for id in ids:
+		var u = DataTables.meta_upgrades[id]
+		var lvl = SaveManager.get_meta_level(id)
+		var maxl = int(u.get("max_level", 1))
+		var cost = SaveManager.meta_upgrade_cost(id)
+		var b = Button.new()
+		b.name = "meta_" + id
+		b.custom_minimum_size = Vector2(700 * f, 52 * f)
+		b.add_theme_font_size_override("font_size", int(20 * f))
+		if cost < 0:
+			b.text = "%s  Lv.%d/%d ｜%s ｜已满级" % [str(u.get("name", id)), lvl, maxl, str(u.get("desc", ""))]
+			b.disabled = true
+		else:
+			b.text = "%s  Lv.%d/%d ｜%s ｜升级花费 %d 金" % [str(u.get("name", id)), lvl, maxl, str(u.get("desc", "")), cost]
+			b.disabled = gold < cost
+			b.connect("pressed", _on_buy_meta.bind(id))
+		meta_list.add_child(b)
+
+func _on_buy_meta(id: String):
+	if SaveManager.buy_meta_upgrade(id):
+		refresh_meta()
 
 ## ---------- 设置 ----------
 func _build_settings_panel():

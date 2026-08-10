@@ -19,6 +19,14 @@ var enemy_scale = 1.0
 var difficulty_id = "normal"
 var diff = { "enemy_hp": 1.0, "enemy_dmg": 1.0, "exp": 1.0, "coin": 1.0, "spawn": 1.0 }
 
+# 地图系统（诸天万界，顺序解锁，难度逐级递增）
+var map_id = "zombie"
+var current_map: Dictionary = {}
+
+# 局外强化乘数（由 meta_upgrades 的 gold_gain / exp_gain 推导）
+var meta_gold_mult = 1.0
+var meta_exp_mult = 1.0
+
 # Boss 奖励：击杀 Boss 后必定给一个红色品质词条
 var red_reward_queued = false
 
@@ -59,6 +67,25 @@ func set_difficulty(id: String) -> void:
 		"spawn": float(d.spawn)
 	}
 
+## 设置当前地图（由主菜单选择流程调用，菜单处已校验解锁状态）
+func set_map(id: String) -> void:
+	if not DataTables.maps.has(id):
+		id = "zombie"
+	map_id = id
+	current_map = DataTables.maps[id]
+	compute_meta_multipliers()
+
+## 由 meta_upgrades 的 gold_gain / exp_gain 推导全局乘数
+func compute_meta_multipliers() -> void:
+	meta_gold_mult = 1.0
+	meta_exp_mult = 1.0
+	if DataTables.meta_upgrades.has("gold_gain"):
+		var lvl = float(SaveManager.get_meta_level("gold_gain"))
+		meta_gold_mult = 1.0 + float(DataTables.meta_upgrades["gold_gain"]["per_level"]) * lvl
+	if DataTables.meta_upgrades.has("exp_gain"):
+		var lvl = float(SaveManager.get_meta_level("exp_gain"))
+		meta_exp_mult = 1.0 + float(DataTables.meta_upgrades["exp_gain"]["per_level"]) * lvl
+
 func start_run(p_world, p_player) -> void:
 	world = p_world
 	player = p_player
@@ -82,7 +109,8 @@ func exp_need(lv: int) -> int:
 func add_exp(amount: int) -> void:
 	if not playing:
 		return
-	exp += amount
+	var gain = int(round(float(amount) * meta_exp_mult))
+	exp += gain
 	var leveled = false
 	while exp >= exp_needed:
 		exp -= exp_needed
@@ -173,8 +201,11 @@ func end_run(reason: String) -> void:
 		"level": level,
 		"reason": reason
 	}
+	# 通关（生存到 20 分钟并清完 Boss）则记录地图进度并解锁下一界
+	if reason == "win" and map_id != "":
+		SaveManager.mark_map_cleared(map_id)
 	SaveManager.add_gold(gold)
-	SaveManager.record_run(SaveManager.active_slot, run_time, level)
+	SaveManager.record_run(SaveManager.get_active_slot(), run_time, level)
 	emit_signal("run_ended", stats)
 
 ## 最近敌人查询已迁移到 EnemyManager（数据驱动 + 空间哈希）。

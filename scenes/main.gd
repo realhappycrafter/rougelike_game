@@ -64,7 +64,24 @@ var chest_timer = 0.0
 
 var current_options = []
 
+## 解析命令行 `-- --map=<id>`，用于无头验证指定地图；未指定返回空串
+func _cli_map() -> String:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--map="):
+			var id = a.substr(6)
+			if DataTables.maps.has(id):
+				return id
+			push_warning("[main] 命令行地图 id 不存在：" + id)
+	return ""
+
 func _ready():
+	# 选图优先级：命令行 `-- --map=<id>`（调试/无头验证） > 菜单已选 > 默认地图
+	var forced_map = _cli_map()
+	if forced_map != "":
+		GameManager.set_map(forced_map)
+	elif GameManager.current_map.is_empty():
+		GameManager.set_map(GameManager.map_id)
+
 	world = Node2D.new()
 	add_child(world)
 
@@ -74,6 +91,12 @@ func _ready():
 	bg.map_w = MAP_W
 	bg.map_h = MAP_H
 	bg.z_index = -10
+	# 按当前地图配色（floor 字段含 base/grid/border 三色）
+	if GameManager.current_map.has("floor"):
+		var fl = GameManager.current_map["floor"]
+		if fl.has("base"):   bg.floor_base = Color(fl.base[0], fl.base[1], fl.base[2])
+		if fl.has("grid"):   bg.floor_grid = Color(fl.grid[0], fl.grid[1], fl.grid[2])
+		if fl.has("border"): bg.floor_border = Color(fl.border[0], fl.border[1], fl.border[2])
 	world.add_child(bg)
 
 	_build_walls()
@@ -119,6 +142,12 @@ func _ready():
 	if GameManager.difficulty_id == "extreme":
 		ui.show_perf_warning("⚠ 极端模式：敌人数量极多，低端设备可能出现卡顿")
 	player.setup_character(DataTables.characters["default"])
+	# 局外强化（meta_upgrades）叠加到基础属性
+	player.apply_meta_upgrades(SaveManager.get_meta_upgrades())
+	# 开场旁白（诸天万界世界观）
+	var m = GameManager.current_map
+	if m.has("story_intro") and ui != null:
+		ui.show_story(m.get("world", ""), m.get("name", "未知界域"), m.get("story_intro", ""))
 
 	# ---- 联机接入层（默认 SOLO，开局可选主机/客机/单人）----
 	GameManager.combat_players = [player]
@@ -188,13 +217,16 @@ func _process(delta: float) -> void:
 		_host_broadcast(delta)
 
 func _waves_scale(t: float) -> float:
-	var b = float(DataTables.waves.get("enemy_scale_base", 1.0))
-	var pm = float(DataTables.waves.get("enemy_scale_per_min", 0.35))
+	# 优先读当前地图的强度曲线，回退到全局 waves 表
+	var m = GameManager.current_map
+	var b = float(m.get("enemy_scale_base", DataTables.waves.get("enemy_scale_base", 1.0)))
+	var pm = float(m.get("enemy_scale_per_min", DataTables.waves.get("enemy_scale_per_min", 0.35)))
 	return b + t / 60.0 * pm
 
 ## ---- 阶段机 / 等级解锁 ----
 func init_run_phases() -> void:
-	phases = DataTables.waves.get("phases", [])
+	# 优先读当前地图的阶段配置，回退到全局 waves 表
+	phases = GameManager.current_map.get("phases", DataTables.waves.get("phases", []))
 	phase_idx = 0
 	phase_state = "survival"
 	phase_t = 0.0
@@ -216,7 +248,9 @@ func _update_level_unlocks() -> void:
 	if lv == last_level:
 		return
 	last_level = lv
-	for u in DataTables.waves.get("unlock_schedule", []):
+	# 优先读当前地图的解锁表，回退到全局 waves 表
+	var schedule = GameManager.current_map.get("unlock_schedule", DataTables.waves.get("unlock_schedule", []))
+	for u in schedule:
 		if int(u.level) <= lv and not _unlock_announced.has(u.enemy):
 			_unlock_announced[u.enemy] = true
 			SpawnManager.unlocked[u.enemy] = true
@@ -524,6 +558,10 @@ func _on_run_ended(stats: Dictionary) -> void:
 	# 主机结束对局时，通知所有客机（客机无本地模拟，靠此收尾）
 	if GameManager.net_mode == GameManager.NetMode.HOST:
 		NetManager._send({"t": "gameover", "stats": stats})
+	# 通关（win）：先放章节尾声旁白，再弹出结算面板
+	if stats.get("reason", "") == "win" and GameManager.current_map.has("story_outro") and ui != null:
+		var m = GameManager.current_map
+		ui.show_story(m.get("world", ""), m.get("name", "未知界域") + " · 通关", m.get("story_outro", ""))
 	ui.show_results(stats)
 
 func _on_hud_changed() -> void:

@@ -13,7 +13,11 @@ func reset() -> void:
 
 func update(t: float, delta: float, world, spawner) -> void:
 	# 普通怪持续生成（rate_mult 由 main 按阶段设置；难度系数来自 GameManager.diff）
-	var rate = float(DataTables.waves["base_spawn_rate"]) * (1.0 + t / 60.0 * float(DataTables.waves["spawn_growth"])) * rate_mult * GameManager.diff.spawn
+	# 优先读当前地图的刷怪速率，回退到全局 waves 表（向后兼容）
+	var m = GameManager.current_map
+	var base = float(m.get("base_spawn_rate", DataTables.waves.get("base_spawn_rate", 2.0)))
+	var growth = float(m.get("spawn_growth", DataTables.waves.get("spawn_growth", 0.5)))
+	var rate = base * (1.0 + t / 60.0 * growth) * rate_mult * GameManager.diff.spawn
 	spawn_accum += rate * delta
 	while spawn_accum >= 1.0:
 		spawn_accum -= 1.0

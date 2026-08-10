@@ -40,5 +40,103 @@
     "max_level": 8, "evolution": "holy_whip",
     "desc": "近身横扫，高击退",
     "level_desc": ["伤害 +6", "横扫范围 +0.4", "击退 +20", "伤害 +10", "范围 +0.6", "击退 +30", "进化：神圣之鞭"]
+  },
+
+  "dlu_bluesilver": {
+    "id": "dlu_bluesilver", "name": "蓝银草", "type": "aura", "maps": ["douluo"],
+    "damage": 4, "cooldown": 0.4, "count": 1, "projectile_speed": 0,
+    "pierce": 0, "area": 1.0, "knockback": 0, "duration": 0,
+    "max_level": 8, "evolution": "",
+    "desc": "蓝银缠绕，持续束缚灼伤靠近的敌人",
+    "level_desc": ["灼伤 +2", "范围 +0.3", "持续更久", "伤害 +3", "范围 +0.5", "缠缚加深", "蓝银领域"]
+  },
+  "dlu_hammer": {
+    "id": "dlu_hammer", "name": "昊天锤", "type": "orbit", "maps": ["douluo"],
+    "damage": 18, "cooldown": 1.0, "count": 1, "projectile_speed": 0,
+    "pierce": 1, "area": 1.6, "knockback": 70, "duration": 0,
+    "max_level": 8, "evolution": "holy_hammer",
+    "desc": "昊天锤：近身重击，巨力击退",
+    "level_desc": ["伤害 +7", "横扫范围 +0.4", "击退 +25", "伤害 +11", "范围 +0.6", "击退 +35", "进化：神锤裂地"]
+  },
+  "dlu_tower": {
+    "id": "dlu_tower", "name": "七宝琉璃塔", "type": "aura", "maps": ["douluo"],
+    "damage": 2, "cooldown": 1.2, "count": 1, "projectile_speed": 0,
+    "pierce": 0, "area": 1.3, "knockback": 0, "duration": 0,
+    "max_level": 8, "evolution": "",
+    "desc": "琉璃光环：范围真光灼烧",
+    "level_desc": ["光焰 +1", "范围 +0.3", "持续更久", "伤害 +2", "范围 +0.4", "光耀加深", "琉璃净世"]
+  },
+  "dlu_phoenix": {
+    "id": "dlu_phoenix", "name": "凤凰火线", "type": "projectile", "maps": ["douluo"],
+    "damage": 12, "cooldown": 0.7, "count": 1, "projectile_speed": 480,
+    "pierce": 1, "area": 1.0, "knockback": 20, "duration": 0,
+    "max_level": 8, "evolution": "",
+    "desc": "凤凰火线：灼烧弹道",
+    "level_desc": ["伤害 +5", "弹速 +40", "穿透 +1", "连发 +1", "伤害 +7", "穿透 +1", "涅槃火羽"]
+  },
+  "dlu_crossbow": {
+    "id": "dlu_crossbow", "name": "诸葛神弩", "type": "projectile", "maps": ["douluo"],
+    "damage": 9, "cooldown": 0.5, "count": 2, "projectile_speed": 560,
+    "pierce": 2, "area": 1.0, "knockback": 10, "duration": 0,
+    "max_level": 8, "evolution": "",
+    "desc": "连弩：多发穿透",
+    "level_desc": ["伤害 +4", "连发 +1", "弹速 +40", "穿透 +1", "伤害 +6", "连发 +1", "千机弩阵"]
+  },
+  "dlu_rabbit": {
+    "id": "dlu_rabbit", "name": "柔骨兔", "type": "orbit", "maps": ["douluo"],
+    "damage": 10, "cooldown": 0.9, "count": 2, "projectile_speed": 0,
+    "pierce": 0, "area": 1.2, "knockback": 30, "duration": 0,
+    "max_level": 8, "evolution": "",
+    "desc": "柔骨连环踢：环绕连击",
+    "level_desc": ["伤害 +4", "踢击 +1", "范围 +0.3", "伤害 +6", "踢击 +1", "范围 +0.4", "无敌兔腿"]
+  },
+
+  "xx_sword": {
+    "id": "xx_sword", "name": "本命飞剑", "type": "projectile", "maps": ["xiuxian"],
+    "damage": 14, "cooldown": 0.5, "count": 1, "projectile_speed": 520,
+    "pierce": 1, "area": 1.0, "knockback": 15, "duration": 0,
+    "max_level": 8, "evolution": "infinite_sword",
+    "desc": "本命飞剑：御剑斩敌",
+    "level_desc": ["伤害 +6", "剑速 +40", "穿透 +1", "连发 +1", "伤害 +8", "穿透 +1", "进化：万剑归宗"]
+  },
+  "xx_treasure": {
+    "id": "xx_treasure", "name": "法宝环绕", "type": "orbit", "maps": ["xiuxian"],
+    "damage": 13, "cooldown": 1.0, "count": 2, "projectile_speed": 0,
+    "pierce": 0, "area": 1.2, "knockback": 15, "duration": 0,
+    "max_level": 8, "evolution": "",
+    "desc": "法宝：环身护体斩",
+    "level_desc": ["伤害 +5", "法器 +1", "范围 +0.3", "伤害 +7", "法器 +1", "范围 +0.4", "万宝朝宗"]
+  },
+  "xx_talisman": {
+    "id": "xx_talisman", "name": "符箓大阵", "type": "aura", "maps": ["xiuxian"],
+    "damage": 4, "cooldown": 0.4, "count": 1, "projectile_speed": 0,
+    "pierce": 0, "area": 1.2, "knockback": 0, "duration": 0,
+    "max_level": 8, "evolution": "",
+    "desc": "符箓阵：持续真火",
+    "level_desc": ["真火 +2", "范围 +0.3", "持续更久", "伤害 +3", "范围 +0.5", "符威加深", "天师法阵"]
+  },
+  "xx_thunder": {
+    "id": "xx_thunder", "name": "雷法", "type": "projectile", "maps": ["xiuxian"],
+    "damage": 20, "cooldown": 1.1, "count": 1, "projectile_speed": 600,
+    "pierce": 1, "area": 1.0, "knockback": 25, "duration": 0,
+    "max_level": 8, "evolution": "",
+    "desc": "掌心雷：落雷裂敌",
+    "level_desc": ["伤害 +8", "雷速 +40", "穿透 +1", "连发 +1", "伤害 +10", "穿透 +1", "九天神雷"]
+  },
+  "xx_shanshui": {
+    "id": "xx_shanshui", "name": "山河社稷图", "type": "aura", "maps": ["xiuxian"],
+    "damage": 3, "cooldown": 1.2, "count": 1, "projectile_speed": 0,
+    "pierce": 0, "area": 1.5, "knockback": 0, "duration": 0,
+    "max_level": 8, "evolution": "",
+    "desc": "山河图：封印领域",
+    "level_desc": ["封印 +1", "范围 +0.4", "持续更久", "伤害 +2", "范围 +0.5", "山河浩大", "乾坤封印"]
+  },
+  "xx_swordarray": {
+    "id": "xx_swordarray", "name": "剑阵", "type": "orbit", "maps": ["xiuxian"],
+    "damage": 12, "cooldown": 0.9, "count": 3, "projectile_speed": 0,
+    "pierce": 0, "area": 1.4, "knockback": 20, "duration": 0,
+    "max_level": 8, "evolution": "",
+    "desc": "万剑归宗：剑阵环身",
+    "level_desc": ["伤害 +5", "剑影 +1", "范围 +0.3", "伤害 +7", "剑影 +1", "范围 +0.4", "诛仙剑阵"]
   }
 }

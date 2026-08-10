@@ -10,6 +10,8 @@ var waves = {}
 var characters = {}
 var difficulties = {}
 var chests = {}
+var maps = {}
+var meta_upgrades = {}
 
 func _ready():
 	_load_all()
@@ -23,6 +25,8 @@ func _load_all():
 	characters = _load_json("res://data/characters.json")
 	difficulties = _load_json("res://data/difficulties.json")
 	chests = _load_json("res://data/chests.json")
+	maps = _load_json("res://data/maps.json")
+	meta_upgrades = _load_json("res://data/meta_upgrades.json")
 
 func _load_json(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):
@@ -46,3 +50,5 @@ func weapon(id: String) -> Dictionary: return weapons.get(id, {})
 func passive(id: String) -> Dictionary: return passives.get(id, {})
 func enemy(id: String) -> Dictionary: return enemies.get(id, {})
 func character(id: String) -> Dictionary: return characters.get(id, {})
+func map_data(id: String) -> Dictionary: return maps.get(id, {})
+func meta_upgrade(id: String) -> Dictionary: return meta_upgrades.get(id, {})
