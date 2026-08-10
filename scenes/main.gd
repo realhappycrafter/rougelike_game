@@ -22,6 +22,7 @@ const UIScript         = preload("res://scripts/ui.gd")
 const BGFloorScript    = preload("res://scripts/systems/bg_floor.gd")
 const RemoteWorldScript = preload("res://scripts/systems/remote_world.gd")
 const NetSerializeScript = preload("res://scripts/systems/net_serialize.gd")
+const UITheme = preload("res://ui_theme.tres")
 
 var world: Node2D
 var camera: Camera2D
@@ -592,6 +593,8 @@ func _build_net_panel() -> void:
 	net_panel = Control.new()
 	net_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	net_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	# 显式套用主题（Web 导出下主题继承链偶尔失效，直接指定最稳）
+	net_panel.theme = UITheme
 
 	# 半透明背景
 	var bg = ColorRect.new()
@@ -605,33 +608,41 @@ func _build_net_panel() -> void:
 	vbox.custom_minimum_size = Vector2(380, 340)
 	net_panel.add_child(vbox)
 
+	# Web 导出下必须显式覆盖字体，否则自定义 CJK 字体不生效→中文变方框
+	var cjk: Font = UITheme.default_font
+
 	var title = Label.new()
 	title.text = "联机模式（零成本 WebSocket 中继）"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 20)
+	title.add_theme_font_override("font", cjk)
 	vbox.add_child(title)
 
 	var hint = Label.new()
 	hint.text = "第一个进房者为主机（权威），其余为客机。\n按 N 可随时开关此面板。"
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint.add_theme_font_override("font", cjk)
 	vbox.add_child(hint)
 
 	var room_le = LineEdit.new()
 	room_le.placeholder_text = "房间名（如 room1）"
 	room_le.text = "room1"
+	room_le.add_theme_font_override("font", cjk)
 	vbox.add_child(room_le)
 
 	var url_le = LineEdit.new()
 	url_le.placeholder_text = "中继地址 ws://host:port"
 	url_le.text = _default_relay_url()
+	url_le.add_theme_font_override("font", cjk)
 	vbox.add_child(url_le)
 
-	var b_host = Button.new(); b_host.text = "创建房间（主机 / 权威）"; vbox.add_child(b_host)
-	var b_guest = Button.new(); b_guest.text = "加入房间（客机）"; vbox.add_child(b_guest)
-	var b_solo = Button.new(); b_solo.text = "单人游戏（跳过）"; vbox.add_child(b_solo)
+	var b_host = Button.new(); b_host.text = "创建房间（主机 / 权威）"; b_host.add_theme_font_override("font", cjk); vbox.add_child(b_host)
+	var b_guest = Button.new(); b_guest.text = "加入房间（客机）"; b_guest.add_theme_font_override("font", cjk); vbox.add_child(b_guest)
+	var b_solo = Button.new(); b_solo.text = "单人游戏（跳过）"; b_solo.add_theme_font_override("font", cjk); vbox.add_child(b_solo)
 
 	var status = Label.new(); status.name = "Status"
 	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	status.add_theme_font_override("font", cjk)
 	vbox.add_child(status)
 
 	b_host.connect("pressed", func(): _connect_as(true, room_le.text, url_le.text))
