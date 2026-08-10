@@ -10,12 +10,37 @@ jobs:
     name: Validate project & build Web export
     runs-on: ubuntu-latest
     # barichello/godot-ci 已内置对应版本的 Godot 与导出模板
-    # 如需更换 Godot 版本，把镜像标签改为对应版本（如 4.7 / 4.6.3）即可
+    # 如需更换 Godot 版本，把镜像标签改为对应版本（如 4.6 / 4.8）即可
     container:
       image: barichello/godot-ci:4.7.1
+    env:
+      GODOT_VERSION: "4.7.1"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Godot templates & config
+        # godot-ci 镜像把导出模板与编辑器配置装在 /root，但 CI 容器以 HOME=/github/home
+        # 运行，Godot 会去 ~/.local 找模板而找不到 → 把 /root 下的模板/配置迁移到当前 HOME。
+        # 若镜像未预装模板（极端情况），则回退到下载官方导出模板。
+        run: |
+          set -e
+          DST="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          mkdir -p "$HOME/.local/share/godot/export_templates" "$HOME/.config"
+          if [ -d "/root/.local/share/godot/export_templates/${GODOT_VERSION}.stable" ] && [ ! -d "$DST" ]; then
+            mv "/root/.local/share/godot/export_templates/${GODOT_VERSION}.stable" "$DST"
+          fi
+          if [ ! -f "$DST/web_nothreads_release.zip" ] && [ ! -f "$DST/android_debug.apk" ]; then
+            echo "镜像未预装导出模板，改为下载官方 ${GODOT_VERSION}-stable 导出模板..."
+            mkdir -p "$DST"
+            curl -fSL -o /tmp/godot_tpl.tpz "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+            python3 -c "import zipfile; zipfile.ZipFile('/tmp/godot_tpl.tpz').extractall('$DST')"
+          fi
+          if [ -d "/root/.config/godot" ] && [ ! -d "$HOME/.config/godot" ]; then
+            mv /root/.config/godot "$HOME/.config/godot"
+          fi
+          echo "=== templates in $DST ==="
+          ls -1 "$DST" 2>/dev/null | head
 
       - name: Import & sanity-check (editor must load without errors)
         run: godot --headless --editor --quit --path .
@@ -38,26 +63,49 @@ jobs:
     # 同一 godot-ci 镜像：内置 Godot、导出模板与 Android SDK（含 gradle 构建所需）
     container:
       image: barichello/godot-ci:4.7.1
+    env:
+      GODOT_VERSION: "4.7.1"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           lfs: true
 
-      - name: Build Android (debug, gradle)
-        # 全新 checkout 无 android/build 目录，Godot 会在导出时自动解压并安装
-        # Android 构建模板（写入正确的 .build_version），从而绕开本地手动解压会踩的坑。
-        # use_gradle_build=true 时包名取自 export_presets.cfg 的 package_name，
-        # 产出即 com.yzj_workspace.rougelikesurvivors（而非派生包名）。
+      - name: Setup Godot templates & config
+        run: |
+          set -e
+          DST="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          mkdir -p "$HOME/.local/share/godot/export_templates" "$HOME/.config"
+          if [ -d "/root/.local/share/godot/export_templates/${GODOT_VERSION}.stable" ] && [ ! -d "$DST" ]; then
+            mv "/root/.local/share/godot/export_templates/${GODOT_VERSION}.stable" "$DST"
+          fi
+          if [ ! -f "$DST/web_nothreads_release.zip" ] && [ ! -f "$DST/android_debug.apk" ]; then
+            echo "镜像未预装导出模板，改为下载官方 ${GODOT_VERSION}-stable 导出模板..."
+            mkdir -p "$DST"
+            curl -fSL -o /tmp/godot_tpl.tpz "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+            python3 -c "import zipfile; zipfile.ZipFile('/tmp/godot_tpl.tpz').extractall('$DST')"
+          fi
+          if [ -d "/root/.config/godot" ] && [ ! -d "$HOME/.config/godot" ]; then
+            mv /root/.config/godot "$HOME/.config/godot"
+          fi
+          echo "=== templates in $DST ==="
+          ls -1 "$DST" 2>/dev/null | head
+
+      - name: Build Android (debug)
+        # CI 用预编译 android_debug.apk 重打包（use_gradle_build=false），仅依赖导出模板，
+        # 规避 gradle 构建模板在纯无头环境的安装问题。产物包名为 Godot 默认
+        # （com.example.roguelikesurvivors），故下方包名校验为 WARN 级。
+        # 本地正式发布仍走 gradle + 精确包名（export_presets.cfg 不改）。
         run: |
           mkdir -p build/android
+          sed -i 's/^gradle_build\/use_gradle_build=true/gradle_build\/use_gradle_build=false/' export_presets.cfg
           godot --headless --export-debug "Android" build/android/rougelike_debug.apk
 
       - name: Verify APK package name
         run: |
           PKG=$(aapt2 dump badging build/android/rougelike_debug.apk 2>/dev/null | grep -oE "package: name='[^']+'" | head -1)
           echo "APK: $PKG"
-          echo "$PKG" | grep -q "com.yzj_workspace.rougelikesurvivors" && echo "OK: 精确包名生效" || echo "WARN: 包名非预期"
+          echo "$PKG" | grep -q "com.yzj_workspace.rougelikesurvivors" && echo "OK: 精确包名生效" || echo "WARN: CI 使用预编译模板，包名为 Godot 默认（非精确包名）"
 
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
