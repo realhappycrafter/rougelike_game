@@ -9,6 +9,7 @@ var checks = 0
 func _ready():
 	_check_maps()
 	_check_weapons_maps()
+	_check_weapon_visuals()
 	_check_meta_stats()
 	_check_meta_math()
 	_check_unlock_chain()
@@ -73,6 +74,29 @@ func _check_weapons_maps() -> void:
 					per_map[mid] += 1
 	for mid in per_map.keys():
 		_ok(per_map[mid] >= 3, "地图 %s 可用武器仅 %d 把（升级池会太空）" % [mid, per_map[mid]])
+
+## 2b) 每把武器必须有 visual，且 shape 必须匹配其 type 的已知枚举
+func _check_weapon_visuals() -> void:
+	var known = {
+		"projectile": ["dart", "bolt", "arrow", "feather", "sword", "thunder", "talisman_shot"],
+		"aura": ["vine", "tower", "landscape", "talisman", "default"],
+		"orbit": ["page", "crescent", "hammer", "beast", "treasure", "sword_array"],
+	}
+	for wid in DataTables.weapons.keys():
+		var w = DataTables.weapons[wid]
+		var t = str(w.get("type", ""))
+		var vis = w.get("visual", {})
+		_ok(typeof(vis) == TYPE_DICTIONARY and vis.size() > 0,
+			"武器 %s 缺少 visual 字段" % wid)
+		var shape = str(vis.get("shape", ""))
+		_ok(known.has(t) and known[t].has(shape),
+			"武器 %s 的 visual.shape=%s 与 type=%s 不匹配" % [wid, shape, t])
+		# 颜色存在且为 3 元素数组（缺失会用兜底色，但数据应完整）
+		for ck in ["color", "color2"]:
+			if vis.has(ck):
+				var c = vis[ck]
+				_ok(typeof(c) == TYPE_ARRAY and c.size() >= 3,
+					"武器 %s visual.%s 应为 [r,g,b] 数组" % [wid, ck])
 
 ## 3) meta_upgrades 的 stat 必须是 player 已实现的字段名
 func _check_meta_stats() -> void:

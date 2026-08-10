@@ -28,22 +28,65 @@ func launch(pos: Vector2, v: Vector2, dmg: float, pc: int, kback: float, life_t:
 	hit_set = []
 	queue_redraw()
 
+## 从 visual 读颜色（[r,g,b] 数组），缺省用兜底色
+func _vc(key: String, fallback: Color) -> Color:
+	if visual.has(key):
+		var c = visual[key]
+		if typeof(c) == TYPE_ARRAY and c.size() >= 3:
+			return Color(c[0], c[1], c[2])
+	return fallback
+
+## 弹体已按飞行方向 rotation 旋转，故绘制一律以 +X 为前方
 func _draw():
-	if visible:
-		match visual.get("shape", "dot"):
-			"dart":
-				# 飞刀：黄色三角飞镖（朝飞行方向）
-				var col = Color(1, 0.9, 0.3)
-				var pts = PackedVector2Array([Vector2(9,0), Vector2(-6,-5), Vector2(-3,0), Vector2(-6,5)])
-				draw_colored_polygon(pts, col)
-				draw_circle(Vector2(-2, 0), 2.0, Color(1, 1, 1, 0.9))
-			"bolt":
-				# 魔杖：紫色魔法弹 + 光晕（与飞刀截然不同）
-				draw_circle(Vector2.ZERO, 8.0, Color(0.6, 0.3, 1.0, 0.45))
-				draw_circle(Vector2.ZERO, 4.5, Color(0.78, 0.5, 1.0, 1.0))
-				draw_circle(Vector2.ZERO, 2.0, Color(1, 1, 1, 1.0))
-			_:
-				draw_circle(Vector2.ZERO, 6.0, Color(1, 0.9, 0.3))
+	if not visible:
+		return
+	var col = _vc("color", Color(1, 0.9, 0.3))
+	var col2 = _vc("color2", Color(1, 1, 1))
+	match visual.get("shape", "dot"):
+		"dart":
+			# 飞刀：三角飞镖
+			draw_colored_polygon(
+				PackedVector2Array([Vector2(9, 0), Vector2(-6, -5), Vector2(-3, 0), Vector2(-6, 5)]), col)
+			draw_circle(Vector2(-2, 0), 2.0, Color(col2.r, col2.g, col2.b, 0.9))
+		"bolt":
+			# 魔弹：核心 + 光晕
+			draw_circle(Vector2.ZERO, 8.0, Color(col.r, col.g, col.b, 0.45))
+			draw_circle(Vector2.ZERO, 4.5, col)
+			draw_circle(Vector2.ZERO, 2.0, col2)
+		"arrow":
+			# 弩箭：细杆 + 箭头 + 尾羽
+			draw_line(Vector2(-10, 0), Vector2(6, 0), col, 2.5)
+			draw_colored_polygon(
+				PackedVector2Array([Vector2(12, 0), Vector2(4, -4), Vector2(4, 4)]), col2)
+			draw_line(Vector2(-10, -3), Vector2(-6, 0), col2, 1.5)
+			draw_line(Vector2(-10, 3), Vector2(-6, 0), col2, 1.5)
+		"feather":
+			# 凤凰火羽：火焰羽翎 + 拖尾
+			draw_colored_polygon(
+				PackedVector2Array([Vector2(11, 0), Vector2(0, -6), Vector2(-8, 0), Vector2(0, 6)]),
+				Color(col.r, col.g, col.b, 0.95))
+			draw_colored_polygon(
+				PackedVector2Array([Vector2(6, 0), Vector2(0, -3), Vector2(-4, 0), Vector2(0, 3)]), col2)
+			draw_line(Vector2(-8, 0), Vector2(-16, 0), Color(col.r, col.g, col.b, 0.35), 4.0)
+		"sword":
+			# 飞剑：细长剑身 + 剑格
+			draw_line(Vector2(-12, 0), Vector2(13, 0), col, 3.0)
+			draw_line(Vector2(-6, -5), Vector2(-6, 5), col2, 2.0)
+			draw_circle(Vector2(13, 0), 2.5, col2)
+		"thunder":
+			# 雷法：锯齿闪电
+			draw_polyline(PackedVector2Array([
+				Vector2(-12, 0), Vector2(-4, -6), Vector2(0, 1), Vector2(6, -5), Vector2(12, 2)
+			]), col, 3.0)
+			draw_circle(Vector2(12, 2), 3.5, Color(col2.r, col2.g, col2.b, 0.9))
+		"talisman_shot":
+			# 符箓：矩形符纸 + 符文
+			draw_rect(Rect2(Vector2(-5, -8), Vector2(10, 16)), col)
+			draw_rect(Rect2(Vector2(-5, -8), Vector2(10, 16)), col2, false, 1.5)
+			draw_line(Vector2(0, -5), Vector2(0, 5), col2, 1.5)
+			draw_line(Vector2(-3, 0), Vector2(3, 0), col2, 1.5)
+		_:
+			draw_circle(Vector2.ZERO, 6.0, col)
 
 func _physics_process(delta: float) -> void:
 	if not GameManager.playing or not visible:

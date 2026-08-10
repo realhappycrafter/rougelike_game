@@ -37,6 +37,10 @@ var net_controlled: bool = false   # true：host 端代理玩家，由网络意�
 var is_remote_render: bool = false # true：客机端本端化身，位置由快照预测/插值驱动，不本地移动
 var net_color: Color = Color(0.45, 0.8, 1.0)  # 用于区分不同玩家的身份环颜色
 var net_intent_move: Vector2 = Vector2.ZERO   # host 端：客机发来的移动意图
+
+# 无头长时程测试用：命令行传入 --god 时置 true，使玩家免疫伤害、可覆盖 Boss/通关分支。
+# 正常游玩与 Web 导出永不设置此字段，无任何副作用。
+var god_mode: bool = false
 var net_intent_aim: Vector2 = Vector2.ZERO    # host 端：客机发来的瞄准方向
 var downed: bool = false       # 是否处于倒地（MVP 中立即复活，仅作状态标记）
 
@@ -187,6 +191,9 @@ func _draw():
 		draw_arc(Vector2.ZERO, r + 5.0, 0, TAU, 32, net_color, 2.0)
 
 func take_damage(amount: float) -> void:
+	# 无头测试免伤钩子（仅命令行 --god 时启用，正常游玩恒为 false）
+	if god_mode:
+		return
 	if invuln_time > 0:
 		return
 	var dmg = max(1.0, amount - float(armor))

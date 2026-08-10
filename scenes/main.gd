@@ -74,6 +74,13 @@ func _cli_map() -> String:
 			push_warning("[main] 命令行地图 id 不存在：" + id)
 	return ""
 
+## 无头长时程测试钩子：命令行 `--god` 时返回 true，使玩家免伤（正常游玩不传此参数）
+func _cli_god() -> bool:
+	for a in OS.get_cmdline_user_args():
+		if a == "--god":
+			return true
+	return false
+
 func _ready():
 	# 选图优先级：命令行 `-- --map=<id>`（调试/无头验证） > 菜单已选 > 默认地图
 	var forced_map = _cli_map()
@@ -144,6 +151,10 @@ func _ready():
 	player.setup_character(DataTables.characters["default"])
 	# 局外强化（meta_upgrades）叠加到基础属性
 	player.apply_meta_upgrades(SaveManager.get_meta_upgrades())
+	# 无头长时程测试：--god 免伤，覆盖 Boss/通关分支
+	if _cli_god():
+		player.god_mode = true
+		push_warning("[main] 无头测试免伤模式已启用（--god）")
 	# 开场旁白（诸天万界世界观）
 	var m = GameManager.current_map
 	if m.has("story_intro") and ui != null:
