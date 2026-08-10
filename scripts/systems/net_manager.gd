@@ -90,9 +90,12 @@ func _send(msg: Dictionary) -> void:
 func send_input(move: Vector2, aim: Vector2) -> void:
 	_send({"t": "input", "pid": my_pid, "mx": move.x, "my": move.y, "ax": aim.x, "ay": aim.y})
 
-## host 把世界快照广播给同房客机（players 紧凑数组 + enemies 紧凑数组）
-func send_snapshot(players: Array, enemies: Array, run_time: float, kills: int) -> void:
-	_send({"t": "state", "rt": run_time, "kills": kills, "players": players, "enemies": enemies})
+## host 把世界快照广播给同房客机（任意 state 字典，统一补 t:"state" 后发送）
+## 快照结构由 NetSerialize.build_snapshot 构造（玩家/敌人/共享进度/掉落物）。
+func send_state(snapshot: Dictionary) -> void:
+	var d = snapshot.duplicate()
+	d["t"] = "state"
+	_send(d)
 
 func disconnect_relay() -> void:
 	if ws != null:

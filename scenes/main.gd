@@ -21,6 +21,7 @@ const ChestScript      = preload("res://scripts/entities/chest.gd")
 const UIScript         = preload("res://scripts/ui.gd")
 const BGFloorScript    = preload("res://scripts/systems/bg_floor.gd")
 const RemoteWorldScript = preload("res://scripts/systems/remote_world.gd")
+const NetSerializeScript = preload("res://scripts/systems/net_serialize.gd")
 
 var world: Node2D
 var camera: Camera2D
@@ -766,32 +767,42 @@ func _rebuild_combat_players() -> void:
 		arr.append(remote_players[pid])
 	GameManager.combat_players = arr
 
-## 主机：~20Hz 广播世界快照（玩家 + 敌人紧凑数组 + 运行统计）
+## 主机：~20Hz 广播世界快照（玩家 + 敌人紧凑数组 + 共享进度 + 掉落物）
 func _host_broadcast(delta: float) -> void:
 	_host_snap_acc += delta
 	if _host_snap_acc < 0.05:
 		return
 	_host_snap_acc = 0.0
-	var players_arr = []
+	NetManager.send_state(_build_snapshot())
+
+## 构造主机权威世界快照（仅收集实时数据，序列化交给 NetSerialize 纯函数，便于单测）。
+## 新增：全局共享进度（金币/等级/经验/升级所需）与掉落物（宝石/宝箱）数组，
+## 客机端据此镜像共享进度并在 RemoteWorld 中渲染掉落。
+func _build_snapshot() -> Dictionary:
+	var player_entries = []
 	for p in GameManager.combat_players:
-		var wp = []
-		for wid in p.weapons.keys():
-			wp.append({"id": wid, "level": p.weapons[wid].level, "ev": 1 if p.weapons[wid].node.evolved else 0})
-		players_arr.append({
-			"pid": p.pid,
-			"x": round(p.global_position.x * 10.0) / 10.0,
-			"y": round(p.global_position.y * 10.0) / 10.0,
-			"fx": round(p._face.x * 100.0) / 100.0,
-			"fy": round(p._face.y * 100.0) / 100.0,
-			"hp": round(p.hp),
-			"mhp": round(p.max_hp),
-			"lv": GameManager.level,
-			"wp": wp,
-			"c": [p.net_color.r, p.net_color.g, p.net_color.b],
-			"down": 1 if p.downed else 0
-		})
-	var enemies = EnemyManager.serialize_compact()
-	NetManager.send_snapshot(players_arr, enemies, GameManager.run_time, GameManager.kills)
+		if is_instance_valid(p):
+			player_entries.append(NetSerializeScript.serialize_player(p))
+	var gem_entries = []
+	for g in get_tree().get_nodes_in_group("gems"):
+		if is_instance_valid(g) and g.alive:
+			gem_entries.append(NetSerializeScript.serialize_gem(g))
+	var chest_entries = []
+	for c in active_chests:
+		if is_instance_valid(c) and not c.taken:
+			chest_entries.append(NetSerializeScript.serialize_chest(c))
+	return NetSerializeScript.build_snapshot(
+		player_entries,
+		EnemyManager.serialize_compact(),
+		gem_entries,
+		chest_entries,
+		GameManager.run_time,
+		GameManager.kills,
+		GameManager.gold,
+		GameManager.level,
+		GameManager.exp,
+		GameManager.exp_needed
+	)
 
 ## 客机：每帧——读输入→发输入→应用快照（远端渲染 + 本端预测/插值）
 func _client_tick(delta: float) -> void:
@@ -821,8 +832,25 @@ func _client_tick(delta: float) -> void:
 	var st = NetManager.last_state
 	if st.is_empty() or not st.has("players"):
 		return
+	# 3a) 应用 host 广播的共享进度（等级/金币/经验/升级所需/击杀，全局一致）
+	var shared_changed = false
+	if st.has("g") and GameManager.gold != int(st.g):
+		GameManager.gold = int(st.g); shared_changed = true
+	if st.has("lv") and GameManager.level != int(st.lv):
+		GameManager.level = int(st.lv); shared_changed = true
+	if st.has("exp") and GameManager.exp != int(st.exp):
+		GameManager.exp = int(st.exp); shared_changed = true
+	if st.has("enn") and GameManager.exp_needed != int(st.enn):
+		GameManager.exp_needed = int(st.enn); shared_changed = true
+	if st.has("kills") and GameManager.kills != int(st.kills):
+		GameManager.kills = int(st.kills); shared_changed = true
+	if shared_changed:
+		GameManager.hud_changed.emit()
+	# 3b) 远端世界：敌人 + 其他玩家 + 掉落物（宝石/宝箱）
 	remote_world.player_list = []
 	remote_world.enemy_list = []
+	remote_world.gem_list = []
+	remote_world.chest_list = []
 	var self_entry = null
 	for p in st["players"]:
 		if int(p.get("pid", -1)) == GameManager.my_pid:
@@ -831,6 +859,10 @@ func _client_tick(delta: float) -> void:
 			remote_world.player_list.append(p)
 	if st.has("enemies"):
 		remote_world.enemy_list = st["enemies"]
+	if st.has("gems"):
+		remote_world.gem_list = st["gems"]
+	if st.has("chests"):
+		remote_world.chest_list = st["chests"]
 	if self_entry != null:
 		var target = Vector2(float(self_entry.x), float(self_entry.y))
 		# 本地预测 + 向权威位置插值（简化和解，减少延迟感）

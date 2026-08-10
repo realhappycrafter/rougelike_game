@@ -3,6 +3,8 @@ extends Node
 ## 用法：Godot --headless --path rougelike_game res://tests/smoke_check.tscn
 ## 只读校验，不写存档；任何一项失败以非零退出码结束，便于 CI/脚本捕获。
 
+const NetSerialize = preload("res://scripts/systems/net_serialize.gd")
+
 var fails = []
 var checks = 0
 
@@ -15,6 +17,7 @@ func _ready():
 	_check_unlock_chain()
 	await _check_menu_ui()
 	_check_buy_and_apply()
+	_check_net_snapshot()
 	print("[smoke] 共 %d 项检查，失败 %d 项" % [checks, fails.size()])
 	for f in fails:
 		printerr("[smoke][FAIL] " + f)
@@ -215,3 +218,61 @@ func _check_meta_math() -> void:
 			var c = int(floor(float(u["cost_base"]) * pow(float(u["cost_growth"]), float(lvl))))
 			_ok(c > prev, "meta %s 在 Lv%d 的价格未递增（%d <= %d）" % [id, lvl, c, prev])
 			prev = c
+
+## 8) 联机快照（state）序列化纯函数：用合成对象验证协议字段，无需真实联机/中继
+func _check_net_snapshot() -> void:
+	# 合成玩家（dict 模拟 player 接口；weapons[node].evolved 控制进化标志）
+	var player_like = {
+		"pid": 7,
+		"global_position": Vector2(10.0, -20.0),
+		"_face": Vector2(0.0, 1.0),
+		"hp": 80.0,
+		"max_hp": 100.0,
+		"downed": false,
+		"net_color": Color(0.5, 0.5, 0.5),
+		"weapons": {"knife": {"level": 3, "node": {"evolved": true}}}
+	}
+	var p = NetSerialize.serialize_player(player_like)
+	_ok(p.has("pid") and int(p.pid) == 7, "snapshot.player.pid 错误")
+	_ok(p.has("x") and is_equal_approx(float(p.x), 10.0), "snapshot.player.x 错误")
+	_ok(p.has("y") and is_equal_approx(float(p.y), -20.0), "snapshot.player.y 错误")
+	_ok(p.has("fx") and is_equal_approx(float(p.fx), 0.0), "snapshot.player.fx 错误")
+	_ok(p.has("hp") and int(p.hp) == 80, "snapshot.player.hp 错误")
+	_ok(p.has("mhp") and int(p.mhp) == 100, "snapshot.player.mhp 错误")
+	_ok(p.has("lv") and int(p.lv) == int(GameManager.level), "snapshot.player.lv 应与全局等级一致")
+	_ok(p.has("wp") and p.wp.size() == 1, "snapshot.player.wp 应含 1 把武器")
+	_ok(p.wp[0].id == "knife" and int(p.wp[0].level) == 3 and int(p.wp[0].ev) == 1,
+		"snapshot.player.wp 武器条目（id/level/ev）错误")
+	_ok(p.has("c") and p.c.size() == 3, "snapshot.player.c 应为 3 元素颜色数组")
+	_ok(p.has("down") and int(p.down) == 0, "snapshot.player.down 错误")
+
+	# 武器未进化时 ev 应为 0
+	var p2 = NetSerialize.serialize_player({
+		"pid": 8, "global_position": Vector2.ZERO, "_face": Vector2(1, 0),
+		"hp": 50.0, "max_hp": 50.0, "downed": true, "net_color": Color(1, 1, 1),
+		"weapons": {"wand": {"level": 1, "node": {"evolved": false}}}
+	})
+	_ok(int(p2.wp[0].ev) == 0 and int(p2.down) == 1, "未进化武器 ev 应为 0、down 应为 1")
+
+	# 宝石 / 宝箱序列化
+	var g = NetSerialize.serialize_gem({"global_position": Vector2(5.0, 5.0), "type": "coin", "alive": true})
+	_ok(g.has("x") and g.has("y") and g.has("ty") and g.ty == "coin", "snapshot.gem 字段错误")
+	var c = NetSerialize.serialize_chest({"global_position": Vector2(3.0, 4.0), "quality": 5, "taken": false})
+	_ok(c.has("x") and c.has("y") and int(c.q) == 5, "snapshot.chest 字段错误")
+
+	# 完整快照（含新增共享字段 gold/exp/enn + 掉落数组）
+	var snap = NetSerialize.build_snapshot(
+		[player_like], [{"x": 1.0}], [g], [c],
+		123.0, 42, 999, 7, 250, 320
+	)
+	_ok(snap.get("t") == "state", "snapshot.t 应为 state")
+	_ok(int(snap.rt) == 123, "snapshot.rt 错误")
+	_ok(int(snap.kills) == 42, "snapshot.kills 错误")
+	_ok(int(snap.g) == 999, "snapshot.gold 错误")
+	_ok(int(snap.lv) == 7, "snapshot.level 错误")
+	_ok(int(snap.exp) == 250, "snapshot.exp 错误")
+	_ok(int(snap.enn) == 320, "snapshot.exp_needed 错误")
+	_ok(snap.has("gems") and snap.gems.size() == 1, "snapshot.gems 应含 1 个")
+	_ok(snap.has("chests") and snap.chests.size() == 1, "snapshot.chests 应含 1 个")
+	_ok(snap.has("players") and snap.players.size() == 1, "snapshot.players 应含 1 个")
+	_ok(snap.has("enemies") and snap.enemies.size() == 1, "snapshot.enemies 应含 1 个")
