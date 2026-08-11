@@ -17,6 +17,7 @@ func _ready():
 	_check_unlock_chain()
 	await _check_menu_ui()
 	_check_buy_and_apply()
+	_check_level_up_pool()
 	_check_net_snapshot()
 	print("[smoke] 共 %d 项检查，失败 %d 项" % [checks, fails.size()])
 	for f in fails:
@@ -218,6 +219,39 @@ func _check_meta_math() -> void:
 			var c = int(floor(float(u["cost_base"]) * pow(float(u["cost_growth"]), float(lvl))))
 			_ok(c > prev, "meta %s 在 Lv%d 的价格未递增（%d <= %d）" % [id, lvl, c, prev])
 			prev = c
+
+## 9) 满级后升级仍应有三选一（回归：之前满级会静默跳过升级界面，导致升级无三选一）
+func _check_level_up_pool() -> void:
+	var p = load("res://scripts/entities/player.gd").new()
+	add_child(p)
+	p.luck = 0.0
+	GameManager.map_id = "zombie"
+	# 模拟全满级：所有武器拥有且满级、所有被动满级
+	p.weapons = {}
+	for wid in DataTables.weapons.keys():
+		p.weapons[wid] = {"level": int(DataTables.weapons[wid].max_level), "node": null}
+	p.passives = {}
+	for pid in DataTables.passives.keys():
+		p.passives[pid] = {"level": int(DataTables.passives[pid].max_level), "quality": "white"}
+	var opts = UpgradePool.generate(p)
+	_ok(opts.size() == 3, "满级后 generate 应仍返回 3 个选项，实际 %d" % opts.size())
+	var has_treasure = false
+	for o in opts:
+		_ok(str(o.get("name", "")) != "", "满级选项缺少 name")
+		if str(o.get("type", "")) == "treasure":
+			has_treasure = true
+	_ok(has_treasure, "满级后三选一应包含金币宝箱兜底选项")
+	# 初始玩家应拿到真实的武器/被动升级选项（而非全是宝箱）
+	p.weapons = {}
+	p.passives = {}
+	var opts2 = UpgradePool.generate(p)
+	_ok(opts2.size() == 3, "初始玩家 generate 应返回 3 个选项，实际 %d" % opts2.size())
+	var real = 0
+	for o in opts2:
+		if str(o.get("type", "")) != "treasure":
+			real += 1
+	_ok(real >= 1, "初始玩家三选一应包含真实升级选项")
+	p.queue_free()
 
 ## 8) 联机快照（state）序列化纯函数：用合成对象验证协议字段，无需真实联机/中继
 func _check_net_snapshot() -> void:

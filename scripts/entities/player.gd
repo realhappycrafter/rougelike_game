@@ -241,6 +241,13 @@ func apply_upgrade(opt: Dictionary) -> void:
 		else:
 			passives[opt.id] = {"level": 1, "quality": q}
 		_apply_passive(opt.id)
+	elif opt.type == "treasure":
+		# 金币宝箱（满级兜底选项）：仅本端真实玩家计入全局金币，
+		# 联机代理 / 客机渲染化身不算，避免重复加钱（host 权威，金币只加一次）
+		if not net_controlled and not is_remote_render:
+			var amt = int(opt.get("amount", 0))
+			if amt > 0:
+				GameManager.gold += amt
 
 func _apply_passive(id: String) -> void:
 	var p = DataTables.passives[id]

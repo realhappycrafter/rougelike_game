@@ -161,7 +161,26 @@ func generate(player) -> Array:
 				if chosen.size() > 3:
 					chosen = chosen.slice(chosen.size() - 3, chosen.size())
 
+	# 选项不足 3 个（全部满级时常见）：用金币宝箱兜底补齐到 3 个，
+	# 保证升级始终有三选一，而不是在满级后静默跳过（修复「满级后无三选一」的 bug）
+	if chosen.size() < 3:
+		var tiers = _fallback_treasures()
+		randomize()
+		tiers.shuffle()
+		var ti = 0
+		while chosen.size() < 3 and ti < tiers.size():
+			chosen.append(tiers[ti])
+			ti += 1
+
 	# 去掉内部 weight 字段，避免 UI 显示
 	for c in chosen:
 		c.erase("weight")
 	return chosen
+
+## 全部升级满级后的兜底选项：三档金币宝箱，保证升级始终有三选一
+func _fallback_treasures() -> Array:
+	return [
+		{"type":"treasure","id":"gold_s","name":"金币宝箱（小）","desc":"立即获得 60 金币","weight":0,"quality":null,"quality_color":null,"amount":60},
+		{"type":"treasure","id":"gold_m","name":"金币宝箱（中）","desc":"立即获得 180 金币","weight":0,"quality":null,"quality_color":null,"amount":180},
+		{"type":"treasure","id":"gold_l","name":"金币宝箱（大）","desc":"立即获得 450 金币","weight":0,"quality":null,"quality_color":null,"amount":450}
+	]

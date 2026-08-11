@@ -152,11 +152,11 @@ func _on_level_gained() -> void:
 func open_next_level_up() -> void:
 	var options = UpgradePool.generate(player)
 	if options.is_empty():
-		pending_levels -= 1
-		if pending_levels > 0:
-			open_next_level_up()
-		else:
-			emit_signal("hud_changed")
+		# 安全兜底：理论上 generate 总会返回金币宝箱选项，这里仅防极端回归导致静默吞掉升级。
+		# 直接清空排队升级并通知 HUD，避免无限递归或升级界面消失。
+		pending_levels = 0
+		level_up_open = false
+		emit_signal("hud_changed")
 		return
 	level_up_open = true
 	emit_signal("level_up_requested", options)
