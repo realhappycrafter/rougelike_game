@@ -161,21 +161,55 @@ func generate(player) -> Array:
 				if chosen.size() > 3:
 					chosen = chosen.slice(chosen.size() - 3, chosen.size())
 
-	# 选项不足 3 个（全部满级时常见）：用金币宝箱兜底补齐到 3 个，
-	# 保证升级始终有三选一，而不是在满级后静默跳过（修复「满级后无三选一」的 bug）
+	# 选项不足 3 个（武器/被动全部满级时常见）：用「属性继续成长」+「金币宝箱」
+	# 混合兜底补齐到 3 个，保证升级始终有三选一，且两类都出现
+	# （修复「满级后无三选一」的 bug，并按需求让满级后仍有成长与金币可选）。
 	if chosen.size() < 3:
-		var tiers = _fallback_treasures()
+		var growth = _fallback_growth()
+		var treasures = _fallback_treasures()
 		randomize()
-		tiers.shuffle()
+		growth.shuffle()
+		treasures.shuffle()
+		# 组装顺序：先放一个「属性成长」、再放一个「金币」，保证两类都出现；
+		# 剩余槽位优先继续补「属性成长」，让满级后仍以成长为主、金币为辅。
+		var seq = []
+		var gi = 0
 		var ti = 0
-		while chosen.size() < 3 and ti < tiers.size():
-			chosen.append(tiers[ti])
-			ti += 1
+		if growth.size() > 0:
+			seq.append(growth[gi]); gi += 1
+		if treasures.size() > 0:
+			seq.append(treasures[ti]); ti += 1
+		while seq.size() < 3:
+			if gi < growth.size():
+				seq.append(growth[gi]); gi += 1
+			elif ti < treasures.size():
+				seq.append(treasures[ti]); ti += 1
+			else:
+				break
+		for s in seq:
+			if chosen.size() >= 3:
+				break
+			chosen.append(s)
 
 	# 去掉内部 weight 字段，避免 UI 显示
 	for c in chosen:
 		c.erase("weight")
 	return chosen
+
+## 全部升级满级后的兜底选项：属性继续成长（永久加成，可无限叠加）
+func _fallback_growth() -> Array:
+	return [
+		{"type":"stat","stat":"max_hp","amount":25.0,"name":"属性成长·生命","desc":"最大生命 +25（持续成长）","weight":0,"quality":null,"quality_color":null},
+		{"type":"stat","stat":"damage","amount":0.08,"name":"属性成长·伤害","desc":"伤害 +8%（持续成长）","weight":0,"quality":null,"quality_color":null},
+		{"type":"stat","stat":"speed","amount":15.0,"name":"属性成长·移速","desc":"移动速度 +15（持续成长）","weight":0,"quality":null,"quality_color":null},
+		{"type":"stat","stat":"pickup","amount":20.0,"name":"属性成长·拾取","desc":"拾取范围 +20（持续成长）","weight":0,"quality":null,"quality_color":null},
+		{"type":"stat","stat":"cooldown","amount":0.03,"name":"属性成长·冷却","desc":"冷却缩减 +3%（持续成长）","weight":0,"quality":null,"quality_color":null},
+		{"type":"stat","stat":"armor","amount":1.0,"name":"属性成长·护甲","desc":"护甲 +1（持续成长）","weight":0,"quality":null,"quality_color":null},
+		{"type":"stat","stat":"luck","amount":1.0,"name":"属性成长·幸运","desc":"幸运 +1（持续成长）","weight":0,"quality":null,"quality_color":null},
+		{"type":"stat","stat":"crit","amount":0.03,"name":"属性成长·暴击","desc":"暴击率 +3%（持续成长）","weight":0,"quality":null,"quality_color":null},
+		{"type":"stat","stat":"crit_dmg","amount":0.08,"name":"属性成长·暴伤","desc":"暴击伤害 +8%（持续成长）","weight":0,"quality":null,"quality_color":null},
+		{"type":"stat","stat":"lifesteal","amount":0.03,"name":"属性成长·吸血","desc":"吸血 +3%（持续成长）","weight":0,"quality":null,"quality_color":null}
+	]
 
 ## 全部升级满级后的兜底选项：三档金币宝箱，保证升级始终有三选一
 func _fallback_treasures() -> Array:

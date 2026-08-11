@@ -248,6 +248,11 @@ func apply_upgrade(opt: Dictionary) -> void:
 			var amt = int(opt.get("amount", 0))
 			if amt > 0:
 				GameManager.gold += amt
+	elif opt.type == "stat":
+		# 属性继续成长（满级兜底选项）：永久加成，仅本端真实玩家生效，
+		# 联机代理 / 客机渲染化身不重复加（host 权威）。
+		if not net_controlled and not is_remote_render:
+			_apply_stat_buff(str(opt.get("stat", "")), float(opt.get("amount", 0.0)))
 
 func _apply_passive(id: String) -> void:
 	var p = DataTables.passives[id]
@@ -283,6 +288,38 @@ func _apply_passive(id: String) -> void:
 ## 暴击倍率：基础 1.5 倍 + 暴伤加成
 func effective_crit_mult() -> float:
 	return 1.5 + crit_dmg_bonus
+
+## 属性继续成长（满级兜底三选一项）：直接、可无限叠加地永久增强玩家属性。
+## ponytail：直接改动与 meta/passive 相同的字段；在「全部满级」兜底场景下安全，
+## 因为此时不会再调用 _apply_passive 重算这些字段（passive 已 max，不会再次触发）。
+func _apply_stat_buff(stat: String, amount: float) -> void:
+	if amount == 0.0:
+		return
+	match stat:
+		"max_hp":
+			base_max_hp += amount
+			max_hp += amount
+			hp += amount
+		"damage":
+			damage_bonus += amount
+		"speed":
+			base_speed += amount
+			speed += amount
+		"pickup":
+			pickup_range += amount
+		"cooldown":
+			cooldown_reduction = min(0.5, cooldown_reduction + amount)
+		"armor":
+			armor += amount
+		"luck":
+			luck += amount
+		"crit":
+			crit_chance = min(1.0, crit_chance + amount)
+		"crit_dmg":
+			crit_dmg_bonus += amount
+		"lifesteal":
+			lifesteal = min(1.0, lifesteal + amount)
+	queue_redraw()
 
 ## 统一回血（吸血 / 治疗宝箱共用）
 func heal(amount: float) -> void:

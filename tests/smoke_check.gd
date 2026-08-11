@@ -236,11 +236,24 @@ func _check_level_up_pool() -> void:
 	var opts = UpgradePool.generate(p)
 	_ok(opts.size() == 3, "满级后 generate 应仍返回 3 个选项，实际 %d" % opts.size())
 	var has_treasure = false
+	var has_stat = false
 	for o in opts:
 		_ok(str(o.get("name", "")) != "", "满级选项缺少 name")
-		if str(o.get("type", "")) == "treasure":
-			has_treasure = true
+		match str(o.get("type", "")):
+			"treasure":
+				has_treasure = true
+			"stat":
+				has_stat = true
 	_ok(has_treasure, "满级后三选一应包含金币宝箱兜底选项")
+	_ok(has_stat, "满级后三选一应包含属性继续成长兜底选项")
+	# 应用一个「属性成长」选项后，对应属性应真实增长
+	var p_stat = load("res://scripts/entities/player.gd").new()
+	add_child(p_stat)
+	var hp0 = p_stat.base_max_hp
+	p_stat.apply_upgrade({"type":"stat","stat":"max_hp","amount":25.0})
+	_ok(is_equal_approx(p_stat.base_max_hp, hp0 + 25.0),
+		"应用属性成长·生命后基础生命应 +25，实际 %.1f -> %.1f" % [hp0, p_stat.base_max_hp])
+	p_stat.queue_free()
 	# 初始玩家应拿到真实的武器/被动升级选项（而非全是宝箱）
 	p.weapons = {}
 	p.passives = {}
@@ -248,7 +261,7 @@ func _check_level_up_pool() -> void:
 	_ok(opts2.size() == 3, "初始玩家 generate 应返回 3 个选项，实际 %d" % opts2.size())
 	var real = 0
 	for o in opts2:
-		if str(o.get("type", "")) != "treasure":
+		if str(o.get("type", "")) != "treasure" and str(o.get("type", "")) != "stat":
 			real += 1
 	_ok(real >= 1, "初始玩家三选一应包含真实升级选项")
 	p.queue_free()
