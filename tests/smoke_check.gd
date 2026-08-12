@@ -19,6 +19,7 @@ func _ready():
 	_check_buy_and_apply()
 	_check_level_up_pool()
 	_check_net_snapshot()
+	await _check_lobby_gate()
 	print("[smoke] 共 %d 项检查，失败 %d 项" % [checks, fails.size()])
 	for f in fails:
 		printerr("[smoke][FAIL] " + f)
@@ -323,3 +324,23 @@ func _check_net_snapshot() -> void:
 	_ok(snap.has("chests") and snap.chests.size() == 1, "snapshot.chests 应含 1 个")
 	_ok(snap.has("players") and snap.players.size() == 1, "snapshot.players 应含 1 个")
 	_ok(snap.has("enemies") and snap.enemies.size() == 1, "snapshot.enemies 应含 1 个")
+
+## 10) 开局闸门：进入 main 场景应先弹「开始方式」面板且对局未开始；
+## 选择「单人游戏」后世界才构建、对局才开始（验证「是否联机选完再开始游戏」）。
+func _check_lobby_gate() -> void:
+	var scene = load("res://scenes/main.tscn")
+	_ok(scene != null, "main.tscn 加载失败")
+	if scene == null:
+		return
+	var main = scene.instantiate()
+	add_child(main)
+	await get_tree().process_frame
+	# 选模式前：应显示开始方式面板，且对局未开始
+	_ok(main.net_panel != null and main.net_panel.visible, "进入 main 后应显示开始方式面板")
+	_ok(not GameManager.playing, "选模式前对局不应开始（playing 应为 false）")
+	# 模拟选择「单人游戏」：世界应构建且对局开始
+	main._on_choose_solo()
+	await get_tree().process_frame
+	_ok(GameManager.playing, "选择单人后应对局开始（playing=true）")
+	_ok(is_instance_valid(main.get("player")), "选择单人后玩家应已构建")
+	main.queue_free()

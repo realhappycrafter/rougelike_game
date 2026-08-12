@@ -38,6 +38,7 @@ var _host_snap_acc = 0.0     # host 广播节流累加
 var _input_acc = 0.0         # 客机输入发送节流累加
 var _predicted_pos = Vector2.ZERO  # 客机本端化身预测位置
 var _net_over = false        # 联机对局是否已结束（host 广播 gameover 后置位）
+var _game_started = false    # 是否已真正开局（选完模式后才置 true，用于 N 键与重复开局防护）
 
 var projectile_pool = []
 var gem_pool = []
@@ -91,6 +92,30 @@ func _ready():
 	elif GameManager.current_map.is_empty():
 		GameManager.set_map(GameManager.map_id)
 
+	# 屏幕空间 UI 层（HUD 与联机面板都挂这里，隔离相机滚动）
+	ui_layer = CanvasLayer.new()
+	add_child(ui_layer)
+	ui = Control.new()
+	ui.set_script(UIScript)
+	ui_layer.add_child(ui)
+
+	# ---- 联机接入层：先弹「开始方式」面板，玩家选完模式再真正开局 ----
+	# 满足需求：是否联机选完再开始游戏（世界 / 敌人模拟延迟到 _start_game 才构建）。
+	GameManager.combat_players = []
+	GameManager.playing = false
+	_game_started = false
+	NetManager.connect("connected_changed", _on_net_connected_changed)
+	NetManager.connect("message_received", _on_net_message)
+	_build_net_panel()
+	net_panel.visible = true
+
+## 真正开局：构建世界 / 玩家 / 敌人并启动一局。仅在玩家选定模式（单机 / 主机 / 客机）后调用，
+## 解决「是否联机选完再开始游戏」——在此之前世界不构建、run 不启动、对局不计时。
+func _start_game() -> void:
+	if _game_started:
+		return
+	_game_started = true
+
 	world = Node2D.new()
 	add_child(world)
 
@@ -113,13 +138,6 @@ func _ready():
 	# 相机
 	camera = Camera2D.new()
 	world.add_child(camera)
-
-	# UI（屏幕空间，常驻处理）—— 用 CanvasLayer 隔离相机，保证 HUD 不随世界滚动
-	ui_layer = CanvasLayer.new()
-	add_child(ui_layer)
-	ui = Control.new()
-	ui.set_script(UIScript)
-	ui_layer.add_child(ui)
 
 	# 玩家
 	player = CharacterBody2D.new()
@@ -162,14 +180,14 @@ func _ready():
 	if m.has("story_intro") and ui != null:
 		ui.show_story(m.get("world", ""), m.get("name", "未知界域"), m.get("story_intro", ""))
 
-	# ---- 联机接入层（默认 SOLO，开局可选主机/客机/单人）----
-	GameManager.combat_players = [player]
-	remote_players = {}
-	NetManager.connect("connected_changed", _on_net_connected_changed)
-	NetManager.connect("message_received", _on_net_message)
-	_build_net_panel()
-	net_panel.visible = true   # 开局即弹出，玩家可选模式
+	# 按模式进入（solo/host 走本地权威分支；guest 走远端渲染 —— 世界已在上面构建）
+	if GameManager.net_mode == GameManager.NetMode.GUEST:
+		_enter_guest_mode()
+	else:
+		_enter_host_mode()
 
+	if net_panel != null:
+		net_panel.visible = false
 	_on_hud_changed()
 
 func _build_walls():
@@ -588,66 +606,118 @@ func _on_restart() -> void:
 # 联机接入层（零成本：WebSocket 中继 + host 权威）
 # ==========================================================================
 
-## 构建联机入口面板（代码创建，无需改 .tscn）
+## 构建「开始方式」面板（开局闸门，必须先选模式再开始游戏）。
+## 相比旧版更大、更清晰：居中大面板 + 三种开始方式大按钮 + 房间/中继输入 + 状态提示。
 func _build_net_panel() -> void:
 	net_panel = Control.new()
 	net_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	net_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	# 显式套用主题（Web 导出下主题继承链偶尔失效，直接指定最稳）
 	net_panel.theme = UITheme
-
-	# 半透明背景
-	var bg = ColorRect.new()
-	bg.color = Color(0.05, 0.05, 0.09, 0.92)
-	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	net_panel.add_child(bg)
-
-	var vbox = VBoxContainer.new()
-	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	vbox.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	vbox.custom_minimum_size = Vector2(380, 340)
-	net_panel.add_child(vbox)
+	net_panel.process_mode = Node.PROCESS_MODE_ALWAYS
 
 	# Web 导出下必须显式覆盖字体，否则自定义 CJK 字体不生效→中文变方框
 	var cjk: Font = UITheme.default_font
 
+	# 全屏半透明遮罩（面板之外变暗，聚焦选择）
+	var dim = ColorRect.new()
+	dim.color = Color(0.02, 0.02, 0.05, 0.86)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	net_panel.add_child(dim)
+
+	# 居中大面板（按视口自适应，设上下限避免极端尺寸）
+	var pw = 600.0
+	var ph = 620.0
+	var vsize = get_viewport_rect().size
+	pw = min(pw, vsize.x - 40.0)
+	ph = min(ph, vsize.y - 40.0)
+	var panel = Panel.new()
+	panel.name = "LobbyPanel"
+	panel.custom_minimum_size = Vector2(pw, ph)
+	panel.size = Vector2(pw, ph)
+	panel.position = vsize / 2.0 - panel.size / 2.0
+	net_panel.add_child(panel)
+
+	var pad = 30.0
+	var vbox = VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	vbox.add_theme_constant_override("margin_left", pad)
+	vbox.add_theme_constant_override("margin_right", pad)
+	vbox.add_theme_constant_override("margin_top", pad)
+	vbox.add_theme_constant_override("margin_bottom", pad)
+	vbox.add_theme_constant_override("separation", 16)
+	panel.add_child(vbox)
+
 	var title = Label.new()
-	title.text = "联机模式（零成本 WebSocket 中继）"
+	title.text = "开始游戏"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 20)
+	title.add_theme_font_size_override("font_size", 34)
 	title.add_theme_font_override("font", cjk)
 	vbox.add_child(title)
 
-	var hint = Label.new()
-	hint.text = "第一个进房者为主机（权威），其余为客机。\n按 N 可随时开关此面板。"
-	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hint.add_theme_font_override("font", cjk)
-	vbox.add_child(hint)
+	var subtitle = Label.new()
+	subtitle.text = "请选择一种开始方式（联机采用零成本 WebSocket 中继）"
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle.add_theme_font_size_override("font_size", 16)
+	subtitle.add_theme_color_override("font_color", Color(0.7, 0.75, 0.85))
+	subtitle.add_theme_font_override("font", cjk)
+	vbox.add_child(subtitle)
+
+	var b_solo = Button.new()
+	b_solo.text = "单人游戏（跳过联机）"
+	b_solo.add_theme_font_override("font", cjk)
+	b_solo.add_theme_font_size_override("font_size", 22)
+	b_solo.custom_minimum_size = Vector2(0, 56)
+	vbox.add_child(b_solo)
+
+	var b_host = Button.new()
+	b_host.text = "创建房间（主机 / 权威）"
+	b_host.add_theme_font_override("font", cjk)
+	b_host.add_theme_font_size_override("font_size", 22)
+	b_host.custom_minimum_size = Vector2(0, 56)
+	vbox.add_child(b_host)
+
+	var b_guest = Button.new()
+	b_guest.text = "加入房间（客机）"
+	b_guest.add_theme_font_override("font", cjk)
+	b_guest.add_theme_font_size_override("font_size", 22)
+	b_guest.custom_minimum_size = Vector2(0, 56)
+	vbox.add_child(b_guest)
+
+	var tip = Label.new()
+	tip.text = "第一个进房者为主机（权威），其余为客机。同一房间内等级 / 金币 / 升级全局共享。"
+	tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tip.add_theme_font_size_override("font_size", 14)
+	tip.add_theme_color_override("font_color", Color(0.6, 0.65, 0.75))
+	tip.add_theme_font_override("font", cjk)
+	vbox.add_child(tip)
 
 	var room_le = LineEdit.new()
 	room_le.placeholder_text = "房间名（如 room1）"
 	room_le.text = "room1"
+	room_le.custom_minimum_size = Vector2(0, 42)
 	room_le.add_theme_font_override("font", cjk)
 	vbox.add_child(room_le)
 
 	var url_le = LineEdit.new()
 	url_le.placeholder_text = "中继地址 ws://host:port"
 	url_le.text = _default_relay_url()
+	url_le.custom_minimum_size = Vector2(0, 42)
 	url_le.add_theme_font_override("font", cjk)
 	vbox.add_child(url_le)
 
-	var b_host = Button.new(); b_host.text = "创建房间（主机 / 权威）"; b_host.add_theme_font_override("font", cjk); vbox.add_child(b_host)
-	var b_guest = Button.new(); b_guest.text = "加入房间（客机）"; b_guest.add_theme_font_override("font", cjk); vbox.add_child(b_guest)
-	var b_solo = Button.new(); b_solo.text = "单人游戏（跳过）"; b_solo.add_theme_font_override("font", cjk); vbox.add_child(b_solo)
-
-	var status = Label.new(); status.name = "Status"
+	var status = Label.new()
+	status.name = "Status"
 	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	status.add_theme_font_size_override("font_size", 15)
+	status.add_theme_color_override("font_color", Color(0.5, 0.9, 0.7))
 	status.add_theme_font_override("font", cjk)
 	vbox.add_child(status)
 
-	b_host.connect("pressed", func(): _connect_as(true, room_le.text, url_le.text))
-	b_guest.connect("pressed", func(): _connect_as(false, room_le.text, url_le.text))
-	b_solo.connect("pressed", func(): _close_net_panel())
+	b_solo.connect("pressed", _on_choose_solo)
+	b_host.connect("pressed", func(): _on_choose_host(room_le.text, url_le.text))
+	b_guest.connect("pressed", func(): _on_choose_guest(room_le.text, url_le.text))
 
 	net_panel.visible = false
 	ui_layer.add_child(net_panel)
@@ -674,6 +744,23 @@ func _set_status(s: String) -> void:
 	if st != null:
 		st.text = s
 
+## 选择「单人游戏」：直接进入本地一局（不连中继）
+func _on_choose_solo() -> void:
+	GameManager.net_mode = GameManager.NetMode.SOLO
+	_start_game()
+
+## 选择「创建房间」：以主机身份连接中继，连上后再真正开局
+func _on_choose_host(room: String, url: String) -> void:
+	GameManager.net_mode = GameManager.NetMode.HOST
+	NetManager.connect_relay(url, room, true)
+	_set_status("正在创建房间「%s」并连接…" % room)
+
+## 选择「加入房间」：以客机身份连接中继，连上后再真正开局
+func _on_choose_guest(room: String, url: String) -> void:
+	GameManager.net_mode = GameManager.NetMode.GUEST
+	NetManager.connect_relay(url, room, false)
+	_set_status("正在加入房间「%s」…" % room)
+
 func _connect_as(is_host: bool, room: String, url: String) -> void:
 	GameManager.net_mode = GameManager.NetMode.HOST if is_host else GameManager.NetMode.GUEST
 	NetManager.connect_relay(url, room, is_host)
@@ -686,13 +773,19 @@ func _close_net_panel() -> void:
 func _on_net_connected_changed(ok: bool) -> void:
 	if ok:
 		_set_status("已连接（pid=%d，模式=%s）" % [NetManager.my_pid, "主机" if GameManager.net_mode == GameManager.NetMode.HOST else "客机"])
-		net_panel.visible = false
-		if GameManager.net_mode == GameManager.NetMode.GUEST:
-			_enter_guest_mode()
+		if not _game_started:
+			# 首次连接：此刻才真正构建世界并进入对应模式（满足「选完再开始游戏」）
+			_start_game()
 		else:
-			_enter_host_mode()
+			# 对局中按 N 重新选择模式：仅切换联机身份，不重建世界
+			if GameManager.net_mode == GameManager.NetMode.GUEST:
+				_enter_guest_mode()
+			else:
+				_enter_host_mode()
+		if net_panel != null:
+			net_panel.visible = false
 	else:
-		_set_status("连接已断开")
+		_set_status("连接已断开，可重新选择模式")
 		GameManager.net_mode = GameManager.NetMode.SOLO
 
 func _on_net_message(msg: Dictionary) -> void:
@@ -918,5 +1011,6 @@ func _pid_color(pid: int) -> Color:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_N:
-			if net_panel != null:
+			# 仅开局后允许用 N 开关联机面板；开局前面板是「开始方式」闸门，不响应 N
+			if _game_started and net_panel != null:
 				net_panel.visible = not net_panel.visible
