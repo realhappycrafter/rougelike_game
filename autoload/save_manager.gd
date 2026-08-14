@@ -8,10 +8,12 @@ const SAVE_PATH = "user://save.json"
 var data = {
 	"slots": {},        # id -> {difficulty, best_time, level, created}
 	"active_slot": "",  # 当前选中的槽位
-	"global_gold": 0,   # 全局元货币（解锁用）
+	"global_gold": 0,   # 全局元货币（解锁/局外强化用）
+	"global_emerald": 0, # 全局绿宝石（Boss 掉落积累，用于局外高级强化与局内高级道具）
 	"settings": {"music_vol": 0.8, "sfx_vol": 0.8},
 	"meta_upgrades": {},            # id -> 已购等级
-	"map_progress": {"unlocked": ["zombie"], "cleared": []}  # 顺序解锁
+	"map_progress": {"unlocked": ["zombie"], "cleared": []},  # 顺序解锁
+	"short_cleared": []            # 短局通关记录：元素为 "worldId:stage"
 }
 
 func _ready():
@@ -43,6 +45,10 @@ func load_data() -> void:
 		data["settings"] = {"music_vol": 0.8, "sfx_vol": 0.8}
 	if not data.has("meta_upgrades"):
 		data["meta_upgrades"] = {}
+	if not data.has("global_emerald"):
+		data["global_emerald"] = 0
+	if not data.has("short_cleared"):
+		data["short_cleared"] = []
 	if not data.has("map_progress"):
 		data["map_progress"] = {"unlocked": ["zombie"], "cleared": []}
 	if not data["map_progress"].has("unlocked"):
@@ -121,6 +127,14 @@ func add_gold(g: int) -> void:
 func get_gold() -> int:
 	return int(data["global_gold"])
 
+## ---- 绿宝石（Boss 掉落积累，局外/局内高级货币）----
+func add_emerald(n: int) -> void:
+	data["global_emerald"] = int(data["global_emerald"]) + int(n)
+	save_data()
+
+func get_emerald() -> int:
+	return int(data["global_emerald"])
+
 ## ---- 局外强化（元升级）----
 ## 价格公式：floor(cost_base * cost_growth^当前等级)
 ## 全部已购元升级（id -> 等级），供 player.apply_meta_upgrades 使用
@@ -132,16 +146,28 @@ func get_meta_level(id: String) -> int:
 		return int(data["meta_upgrades"][id])
 	return 0
 
-func meta_upgrade_cost(id: String) -> int:
+func meta_upgrade_currency(id: String) -> String:
 	if not DataTables.meta_upgrades.has(id):
-		return 999999
+		return "gold"
+	return str(DataTables.meta_upgrades[id].get("currency", "gold"))
+
+func meta_upgrade_cost(id: String) -> int:
+	# 仅返回金币价（兼容旧调用）；多币种请改用 meta_upgrade_cost_info
+	var info = meta_upgrade_cost_info(id)
+	return info.cost
+
+## 返回 {cost, currency}；已满级 cost=-1
+func meta_upgrade_cost_info(id: String) -> Dictionary:
+	if not DataTables.meta_upgrades.has(id):
+		return {"cost": 999999, "currency": "gold"}
 	var u = DataTables.meta_upgrades[id]
 	var lvl = get_meta_level(id)
 	if lvl >= int(u["max_level"]):
-		return -1  # 已满级
-	return int(floor(float(u["cost_base"]) * pow(float(u["cost_growth"]), float(lvl))))
+		return {"cost": -1, "currency": meta_upgrade_currency(id)}
+	var cost = int(floor(float(u["cost_base"]) * pow(float(u["cost_growth"]), float(lvl))))
+	return {"cost": cost, "currency": meta_upgrade_currency(id)}
 
-## 购买一级，成功返回 true（金币不足/满级返回 false）
+## 购买一级，成功返回 true（货币不足/满级返回 false）；按 currency 扣对应货币
 func buy_meta_upgrade(id: String) -> bool:
 	if not DataTables.meta_upgrades.has(id):
 		return false
@@ -149,10 +175,16 @@ func buy_meta_upgrade(id: String) -> bool:
 	var lvl = get_meta_level(id)
 	if lvl >= int(u["max_level"]):
 		return false
-	var cost = meta_upgrade_cost(id)
-	if int(data["global_gold"]) < cost:
+	var info = meta_upgrade_cost_info(id)
+	var cost = info.cost
+	var cur = info.currency
+	var have = int(data["global_gold"]) if cur == "gold" else int(data["global_emerald"])
+	if have < cost:
 		return false
-	data["global_gold"] = int(data["global_gold"]) - cost
+	if cur == "gold":
+		data["global_gold"] = int(data["global_gold"]) - cost
+	else:
+		data["global_emerald"] = int(data["global_emerald"]) - cost
 	data["meta_upgrades"][id] = lvl + 1
 	save_data()
 	return true
@@ -179,9 +211,51 @@ func mark_map_cleared(id: String) -> void:
 				break
 	save_data()
 
+## 标记某个短局通关（去重）
+func mark_short_stage(world: String, stage: int) -> void:
+	var k = _short_key(world, stage)
+	if not data["short_cleared"].has(k):
+		data["short_cleared"].append(k)
+		save_data()
+
 ## 是否已通关
 func is_map_cleared(id: String) -> bool:
 	return data["map_progress"]["cleared"].has(id)
+
+## ---- 短局模式进度（诸天万界：每世界 3 个短局，全部通关解锁下一世界）----
+func _short_key(world: String, stage: int) -> String:
+	return str(world) + ":" + str(stage)
+
+## 某世界是否解锁：第一界默认解锁；其余需上一界 3 局全部通关
+func is_short_world_unlocked(world_id: String) -> bool:
+	if not DataTables.maps.has(world_id):
+		return false
+	var order = int(DataTables.maps[world_id]["order"])
+	if order <= 1:
+		return true
+	for mid in DataTables.maps.keys():
+		if int(DataTables.maps[mid]["order"]) == order - 1:
+			return short_world_cleared(mid)
+	return false
+
+## 某世界 3 个短局是否全部通关
+func short_world_cleared(world_id: String) -> bool:
+	for s in range(1, 4):
+		if not data["short_cleared"].has(_short_key(world_id, s)):
+			return false
+	return true
+
+## 下一个待打的短局（world,stage）；全部通关返回 {}（空字典）
+func short_next() -> Dictionary:
+	var ids = DataTables.maps.keys()
+	ids.sort_custom(func(a, b): return int(DataTables.maps[a].get("order", 99)) < int(DataTables.maps[b].get("order", 99)))
+	for mid in ids:
+		if not is_short_world_unlocked(mid):
+			continue
+		for s in range(1, 4):
+			if not data["short_cleared"].has(_short_key(mid, s)):
+				return {"world": mid, "stage": s}
+	return {}
 
 ## ---- 设置 ----
 func set_setting(key: String, value) -> void:

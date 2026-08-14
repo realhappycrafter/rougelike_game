@@ -1,0 +1,17 @@
+{
+  "heal":     { "id":"heal",     "name":"急救包",       "desc":"立即回满生命",                 "category":"consumable", "cost":40,  "currency":"gold",    "effect": {"type":"heal_full"} },
+  "bomb":     { "id":"bomb",     "name":"净化炸弹",     "desc":"对全场敌人造成大量伤害",       "category":"consumable", "cost":80,  "currency":"gold",    "effect": {"type":"aoe_damage", "amount":5000} },
+  "goldrush": { "id":"goldrush", "name":"淘金热",       "desc":"立即获得 150 金币",           "category":"consumable", "cost":60,  "currency":"gold",    "effect": {"type":"gold", "amount":150} },
+  "timegem":  { "id":"timegem",  "name":"时间宝石",     "desc":"立即获得大量经验（约 60% 升级）", "category":"consumable", "cost":70,  "currency":"gold",    "effect": {"type":"exp", "amount":0.6} },
+  "w_up":     { "id":"w_up",     "name":"武器精炼",     "desc":"随机一把已有武器 +1 级",       "category":"weapon",     "cost":120, "currency":"gold",    "effect": {"type":"weapon_level", "levels":1} },
+  "w_new":    { "id":"w_new",    "name":"新武器",       "desc":"获得一把随机新武器（若已满则不扣费）", "category":"weapon", "cost":150, "currency":"gold",    "effect": {"type":"new_weapon"} },
+  "a_dmg":    { "id":"a_dmg",    "name":"狂暴药剂",     "desc":"本局伤害 +10%",               "category":"attribute",  "cost":100, "currency":"gold",    "effect": {"type":"stat", "stat":"damage", "amount":0.10} },
+  "a_hp":     { "id":"a_hp",     "name":"坚壁药剂",     "desc":"本局生命上限 +40",            "category":"attribute",  "cost":90,  "currency":"gold",    "effect": {"type":"stat", "stat":"max_hp", "amount":40.0} },
+  "a_spd":    { "id":"a_spd",    "name":"疾风药剂",     "desc":"本局移速 +20",               "category":"attribute",  "cost":90,  "currency":"gold",    "effect": {"type":"stat", "stat":"speed", "amount":20.0} },
+  "a_cd":     { "id":"a_cd",     "name":"急速药剂",     "desc":"本局冷却 -5%",               "category":"attribute",  "cost":90,  "currency":"gold",    "effect": {"type":"stat", "stat":"cooldown", "amount":0.05} },
+  "a_pick":   { "id":"a_pick",   "name":"磁力药剂",     "desc":"本局拾取 +25",               "category":"attribute",  "cost":70,  "currency":"gold",    "effect": {"type":"stat", "stat":"pickup", "amount":25.0} },
+  "a_crit":   { "id":"a_crit",   "name":"锐眼药剂",     "desc":"本局暴击 +5%",               "category":"attribute",  "cost":100, "currency":"gold",    "effect": {"type":"stat", "stat":"crit", "amount":0.05} },
+  "em_wup":   { "id":"em_wup",   "name":"【绿宝石】武器觉醒", "desc":"随机一把已有武器 +3 级（绿宝石）", "category":"weapon", "cost":3, "currency":"emerald", "effect": {"type":"weapon_level", "levels":3} },
+  "em_admg":  { "id":"em_admg",  "name":"【绿宝石】神力灌注", "desc":"本局伤害 +25%（绿宝石）",      "category":"attribute", "cost":4, "currency":"emerald", "effect": {"type":"stat", "stat":"damage", "amount":0.25} },
+  "em_ahp":   { "id":"em_ahp",   "name":"【绿宝石】不朽之躯", "desc":"本局生命上限 +120（绿宝石）",   "category":"attribute", "cost":4, "currency":"emerald", "effect": {"type":"stat", "stat":"max_hp", "amount":120.0} }
+}

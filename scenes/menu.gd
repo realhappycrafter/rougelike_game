@@ -303,7 +303,7 @@ func _build_meta_panel():
 	t.add_theme_font_size_override("font_size", int(30 * f))
 	meta_panel.add_child(t)
 	meta_status = Label.new()
-	meta_status.text = "金币：%d" % SaveManager.get_gold()
+	meta_status.text = "金币：%d ｜ 绿宝石：%d" % [SaveManager.get_gold(), SaveManager.get_emerald()]
 	meta_status.position = Vector2(20 * f, 52 * f)
 	meta_status.size = Vector2(700 * f, 28 * f)
 	meta_status.add_theme_font_size_override("font_size", int(22 * f))
@@ -333,14 +333,17 @@ func refresh_meta():
 	for c in meta_list.get_children():
 		c.queue_free()
 	var gold = SaveManager.get_gold()
-	meta_status.text = "金币：%d" % gold
+	var emerald = SaveManager.get_emerald()
+	meta_status.text = "金币：%d ｜ 绿宝石：%d" % [gold, emerald]
 	var ids = DataTables.meta_upgrades.keys()
 	ids.sort()
 	for id in ids:
 		var u = DataTables.meta_upgrades[id]
 		var lvl = SaveManager.get_meta_level(id)
 		var maxl = int(u.get("max_level", 1))
-		var cost = SaveManager.meta_upgrade_cost(id)
+		var info = SaveManager.meta_upgrade_cost_info(id)
+		var cost = info.cost
+		var cur = info.currency
 		var b = Button.new()
 		b.name = "meta_" + id
 		b.custom_minimum_size = Vector2(700 * f, 52 * f)
@@ -349,8 +352,12 @@ func refresh_meta():
 			b.text = "%s  Lv.%d/%d ｜%s ｜已满级" % [str(u.get("name", id)), lvl, maxl, str(u.get("desc", ""))]
 			b.disabled = true
 		else:
-			b.text = "%s  Lv.%d/%d ｜%s ｜升级花费 %d 金" % [str(u.get("name", id)), lvl, maxl, str(u.get("desc", "")), cost]
-			b.disabled = gold < cost
+			var cost_label = "升级花费 %d 金" % cost if cur == "gold" else "升级花费 %d 绿宝石" % cost
+			b.text = "%s  Lv.%d/%d ｜%s ｜%s" % [str(u.get("name", id)), lvl, maxl, str(u.get("desc", "")), cost_label]
+			if cur == "gold":
+				b.disabled = gold < cost
+			else:
+				b.disabled = emerald < cost
 			b.connect("pressed", _on_buy_meta.bind(id))
 		meta_list.add_child(b)
 

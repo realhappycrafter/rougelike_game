@@ -20,6 +20,11 @@ func _ready():
 	_check_level_up_pool()
 	_check_net_snapshot()
 	await _check_lobby_gate()
+	_check_modes()
+	_check_emerald_meta()
+	_check_short_progression()
+	await _check_shop_buy()
+	_check_run_mode_mult()
 	print("[smoke] 共 %d 项检查，失败 %d 项" % [checks, fails.size()])
 	for f in fails:
 		printerr("[smoke][FAIL] " + f)
@@ -344,3 +349,151 @@ func _check_lobby_gate() -> void:
 	_ok(GameManager.playing, "选择单人后应对局开始（playing=true）")
 	_ok(is_instance_valid(main.get("player")), "选择单人后玩家应已构建")
 	main.queue_free()
+
+## 11) 模式表（长局/短局）结构合法，短局 Boss 时点早于强制结束
+func _check_modes() -> void:
+	_ok(DataTables.modes.size() >= 2, "modes.json 应至少含 long/short 两种模式，实际 %d" % DataTables.modes.size())
+	_ok(DataTables.modes.has("long"), "缺少 long 模式")
+	_ok(DataTables.modes.has("short"), "缺少 short 模式")
+	var lng = DataTables.modes.get("long", {})
+	_ok(int(lng.get("duration", 0)) == 1200, "long.duration 应为 1200（20 分钟），实际 %s" % str(lng.get("duration")))
+	var sht = DataTables.modes.get("short", {})
+	_ok(int(sht.get("duration", 0)) == 300, "short.duration 应为 300（5 分钟），实际 %s" % str(sht.get("duration")))
+	var boss_at = int(sht.get("boss_at", -1))
+	_ok(boss_at > 0, "short 缺少 boss_at（4 分钟刷 Boss）")
+	_ok(boss_at < int(sht.get("duration", 0)), "short.boss_at(%d) 必须早于 duration(%d)" % [boss_at, int(sht.get("duration", 0))])
+	for m in ["hp_mult", "exp_mult", "spawn_mult"]:
+		_ok(sht.has(m) and float(sht.get(m, 0)) > 0.0, "short 缺少正值的 %s" % m)
+	# long 的倍率应为 1.0（不额外加权）
+	_ok(float(lng.get("hp_mult", 0.0)) == 1.0, "long.hp_mult 应为 1.0")
+	_ok(float(lng.get("exp_mult", 0.0)) == 1.0, "long.exp_mult 应为 1.0")
+
+## 12) 绿宝石计价局外强化：扣绿宝石而非金币，且金币不足不影响
+func _check_emerald_meta() -> void:
+	var em_ids = []
+	for id in DataTables.meta_upgrades.keys():
+		if SaveManager.meta_upgrade_currency(id) == "emerald":
+			em_ids.append(id)
+	_ok(em_ids.size() >= 1, "应至少存在 1 个绿宝石计价的局外强化")
+	var backup = SaveManager.data.duplicate(true)
+	for id in em_ids:
+		SaveManager.data["global_gold"] = 0
+		SaveManager.data["global_emerald"] = 999
+		SaveManager.data["meta_upgrades"] = {}
+		var info = SaveManager.meta_upgrade_cost_info(id)
+		_ok(info.currency == "emerald", "%s 的 cost_info.currency 应为 emerald" % id)
+		_ok(info.cost > 0, "%s 的绿宝石价格应 > 0，实际 %d" % [id, info.cost])
+		var bought = SaveManager.buy_meta_upgrade(id)
+		_ok(bought, "绿宝石充足时应能购买 %s" % id)
+		_ok(SaveManager.get_meta_level(id) == 1, "购买后 %s 等级应为 1" % id)
+		_ok(SaveManager.get_emerald() == 999 - info.cost, "购买 %s 应正确扣绿宝石（%d）" % [id, 999 - info.cost])
+		_ok(SaveManager.get_gold() == 0, "购买绿宝石强化不应扣金币")
+		# 绿宝石为 0 时不应成交
+		SaveManager.data["global_emerald"] = 0
+		_ok(not SaveManager.buy_meta_upgrade(id), "绿宝石为 0 时不应购买成功 %s" % id)
+	SaveManager.data = backup
+	SaveManager.save_data()
+
+## 13) 短局进度：每世界 3 局，全通关解锁下一世界
+func _check_short_progression() -> void:
+	var backup = SaveManager.data.duplicate(true)
+	SaveManager.data["short_cleared"] = []
+	var ids = []
+	for i in range(1, DataTables.maps.size() + 1):
+		for mid in DataTables.maps.keys():
+			if int(DataTables.maps[mid].get("order", -1)) == i:
+				ids.append(mid)
+				break
+	_ok(ids.size() >= 2, "短局进度测试需要至少 2 张地图")
+	# 默认应拿到第一个世界第 1 局
+	var nxt = SaveManager.short_next()
+	_ok(nxt == {"world": ids[0], "stage": 1}, "初始 short_next 应返回首世界第1局，实际 %s" % str(nxt))
+	# 第一世界 3 局全清 -> 标记 cleared
+	for s in range(1, 4):
+		SaveManager.mark_short_stage(ids[0], s)
+	_ok(SaveManager.short_world_cleared(ids[0]), "标记 3 局后 %s 应视为全通关" % ids[0])
+	# 下一世界此时应解锁
+	_ok(SaveManager.is_short_world_unlocked(ids[1]), "上一世界全清后，下一世界 %s 应解锁" % ids[1])
+	var nxt2 = SaveManager.short_next()
+	_ok(nxt2 == {"world": ids[1], "stage": 1}, "首世界通关后 short_next 应推进到下一世界第1局，实际 %s" % str(nxt2))
+	# 中途世界不应解锁（跳跃）
+	if ids.size() >= 3:
+		_ok(not SaveManager.is_short_world_unlocked(ids[2]), "未通关第二世界时第三世界不应解锁")
+	SaveManager.data = backup
+	SaveManager.save_data()
+
+## 14) 局内商店：金币/绿宝石商品扣费正确、效果落到玩家
+func _check_shop_buy() -> void:
+	var p = load("res://scripts/entities/player.gd").new()
+	add_child(p)
+	var gold_bak = GameManager.gold
+	var em_bak = GameManager.emerald
+	var cp_bak = GameManager.combat_players.duplicate()
+	GameManager.gold = 1000
+	GameManager.emerald = 100
+	GameManager.combat_players = [p]
+	# 急救包：回满血（先打残）
+	p.hp = 1.0
+	var g0 = GameManager.gold
+	_ok(ShopManager.buy("heal", p), "金币充足应能购买急救包")
+	_ok(p.hp == p.max_hp, "急救包应回满生命")
+	_ok(GameManager.gold == g0 - 40, "急救包应扣 40 金，实际 %d" % GameManager.gold)
+	# 淘金热：发金币
+	var g1 = GameManager.gold
+	_ok(ShopManager.buy("goldrush", p), "应能购买淘金热")
+	_ok(GameManager.gold == g1 - 60 + 150, "淘金热应净赚 90 金")
+	# 狂暴药剂（属性，金）：伤害 +10%
+	var dmg0 = p.damage_bonus
+	var g2 = GameManager.gold
+	_ok(ShopManager.buy("a_dmg", p), "应能购买狂暴药剂")
+	_ok(is_equal_approx(p.damage_bonus, dmg0 + 0.10), "狂暴药剂应使伤害 +0.10，实际 %.2f" % p.damage_bonus)
+	_ok(GameManager.gold == g2 - 100, "狂暴药剂应扣 100 金")
+	# 【绿宝石】神力灌注：伤害 +25%（扣绿宝石，不动金币）
+	var dmg1 = p.damage_bonus
+	var e0 = GameManager.emerald
+	var g3 = GameManager.gold
+	_ok(ShopManager.buy("em_admg", p), "应能购买绿宝石·神力灌注")
+	_ok(is_equal_approx(p.damage_bonus, dmg1 + 0.25), "绿宝石强化应使伤害 +0.25，实际 %.2f" % p.damage_bonus)
+	_ok(GameManager.emerald == e0 - 4, "绿宝石强化应扣 4 绿宝石，实际 %d" % GameManager.emerald)
+	_ok(GameManager.gold == g3, "绿宝石强化不应扣金币")
+	# 武器精炼：需先拥有一把武器
+	p.weapons = {"knife": {"level": 1, "node": null}}
+	var g4 = GameManager.gold
+	_ok(ShopManager.buy("w_up", p), "应能购买武器精炼")
+	_ok(int(p.weapons["knife"]["level"]) == 2, "武器精炼应使 knife 等级 +1，实际 %d" % int(p.weapons["knife"]["level"]))
+	_ok(GameManager.gold == g4 - 120, "武器精炼应扣 120 金")
+	# 买不起则拒绝（不扣费）
+	GameManager.gold = 0
+	GameManager.emerald = 0
+	_ok(not ShopManager.can_afford("heal"), "金币/绿宝石为 0 时不应可负担急救包")
+	_ok(not ShopManager.buy("heal", p), "金币为 0 时购买应失败")
+	# 还原
+	GameManager.gold = gold_bak
+	GameManager.emerald = em_bak
+	GameManager.combat_players = cp_bak
+	p.queue_free()
+
+## 15) 模式倍率：start_run(mode) 把倍率叠加到 diff 上
+func _check_run_mode_mult() -> void:
+	var backup_diff = GameManager.diff.duplicate()
+	var backup_mode = GameManager.game_mode
+	var backup_player = GameManager.player
+	GameManager.set_difficulty("normal")  # normal: 各倍率 1.0
+	# 长局：倍率应全部为 1.0（传 null 作为 player，start_run 不依赖 player 字段）
+	GameManager.start_run(null, null, "long", "", 1)
+	_ok(GameManager.game_mode == "long", "start_run 应设 game_mode=long")
+	_ok(is_equal_approx(GameManager.diff.enemy_hp, 1.0), "long 模式 enemy_hp 倍率应为 1.0")
+	_ok(is_equal_approx(GameManager.diff.exp, 1.0), "long 模式 exp 倍率应为 1.0")
+	_ok(is_equal_approx(GameManager.diff.spawn, 1.0), "long 模式 spawn 倍率应为 1.0")
+	_ok(GameManager.gold == 0 and GameManager.emerald == 0, "start_run 应清零局内金币/绿宝石")
+	# 短局：应套用 0.8 / 1.7 / 1.25
+	GameManager.start_run(null, null, "short", "zombie", 1)
+	_ok(GameManager.game_mode == "short", "start_run 应设 game_mode=short")
+	_ok(is_equal_approx(GameManager.diff.enemy_hp, 0.8), "short 模式 enemy_hp 倍率应为 0.8，实际 %.2f" % GameManager.diff.enemy_hp)
+	_ok(is_equal_approx(GameManager.diff.exp, 1.7), "short 模式 exp 倍率应为 1.7，实际 %.2f" % GameManager.diff.exp)
+	_ok(is_equal_approx(GameManager.diff.spawn, 1.25), "short 模式 spawn 倍率应为 1.25，实际 %.2f" % GameManager.diff.spawn)
+	_ok(GameManager.short_world == "zombie" and GameManager.short_stage == 1, "start_run 应记录短局 world/stage")
+	# 还原（避免把 player 留成裸 Node 导致其他节点 _process 报错）
+	GameManager.diff = backup_diff
+	GameManager.game_mode = backup_mode
+	GameManager.player = backup_player

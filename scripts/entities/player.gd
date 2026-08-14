@@ -225,7 +225,9 @@ func apply_upgrade(opt: Dictionary) -> void:
 	if opt.type == "weapon":
 		if weapons.has(opt.id):
 			weapons[opt.id].level += 1
-			weapons[opt.id].node.on_level_up(weapons[opt.id].level)
+			var wnode = weapons[opt.id].node
+			if wnode != null and wnode.has_method("on_level_up"):
+				wnode.on_level_up(weapons[opt.id].level)
 		else:
 			_equip_weapon(opt.id, 1)
 	elif opt.type == "passive":

@@ -1,0 +1,21 @@
+{
+  "long": {
+    "id": "long",
+    "name": "长局模式",
+    "desc": "20 分钟 · 三阶段三 Boss · 通关解锁下一界",
+    "duration": 1200,
+    "hp_mult": 1.0,
+    "exp_mult": 1.0,
+    "spawn_mult": 1.0
+  },
+  "short": {
+    "id": "short",
+    "name": "短局模式",
+    "desc": "5 分钟 · 4 分刷 1 个 Boss · 5 分到点强制结束",
+    "duration": 300,
+    "boss_at": 240,
+    "hp_mult": 0.8,
+    "exp_mult": 1.7,
+    "spawn_mult": 1.25
+  }
+}

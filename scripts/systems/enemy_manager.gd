@@ -153,6 +153,8 @@ func spawn(eid: String, pos: Vector2, scale_m: float) -> int:
 	e.flash_t = 0.0
 	e.crit_pop_t = 0.0
 	e.scale_mul = scale_m
+	e.stuck_t = 0.0
+	e.avoid_dir = Vector2.ZERO
 	uid_to_index[uid] = idx
 	hash.insert(uid, pos)
 	return uid
@@ -264,6 +266,36 @@ func despawn_uid(uid: int) -> void:
 	free_indices.append(e.index)
 	e.alive = false
 
+## 障碍规避转向：返回敌人朝 target 的移动方向。
+## 若正前方被墙/障碍阻挡，则在多个偏转角中选取「规避后位移最小」的方向绕行，
+## 避免敌人直愣愣卡在墙上推不动（需求 #4：优化寻路）。仅在靠近障碍时才做探测，控制开销。
+func _steer(e: Dictionary, target: Vector2) -> Vector2:
+	var to = target - e.pos
+	var dist = to.length()
+	if dist < 0.001:
+		return Vector2.ZERO
+	var dir = to / dist
+	var step = e.size + 26.0
+	var ahead = e.pos + dir * step
+	var push = resolve_obstacles(ahead, e.size).distance_to(ahead)
+	if push <= 2.0:
+		e.stuck_t = 0.0
+		e.avoid_dir = Vector2.ZERO
+		return dir
+	# 被挡：在若干偏转角里挑最通畅（规避位移最小）的方向
+	var best = dir
+	var best_cost = push
+	for ang in [0.6, -0.6, 1.2, -1.2, 1.9, -1.9, 2.6, -2.6]:
+		var rd = dir.rotated(ang)
+		var pa = e.pos + rd * step
+		var cost = resolve_obstacles(pa, e.size).distance_to(pa)
+		if cost < best_cost:
+			best_cost = cost
+			best = rd
+	e.stuck_t += 1.0
+	e.avoid_dir = best
+	return best
+
 ## ---- 每帧更新 ----
 ## players：参与战斗的玩家节点数组（host 端 = 本人 + 各客机代理；客机端为空，由 host 模拟）。
 ## 每个敌人追逐「最近的玩家」；接触伤害对所有玩家分别结算。
@@ -279,7 +311,8 @@ func _update(delta: float, players: Array) -> void:
 			if d < bd:
 				bd = d
 				best_pos = p.global_position
-		var dir = best_pos - e.pos
+		# 障碍规避转向：被墙挡住时沿最通畅的偏转方向绕行，避免卡墙（需求 #4）
+		var dir = _steer(e, best_pos)
 		if dir.length_squared() > 0.0001:
 			dir = dir.normalized()
 		var old = e.pos

@@ -65,6 +65,16 @@ var last_level = 0
 var _unlock_announced = {}
 var chest_timer = 0.0
 
+# 短局模式时间线（与长局 phases 并行的一套简单计时）
+var short_t = 0.0
+var short_boss_spawned = false
+var short_boss_at = 240.0
+var short_end_at = 300.0
+var _sel_mode = "long"        # 大厅当前选中的模式：long / short
+var _b_long = null
+var _b_short = null
+var _short_prog_label = null
+
 var current_options = []
 
 ## 解析命令行 `-- --map=<id>`，用于无头验证指定地图；未指定返回空串
@@ -161,11 +171,16 @@ func _start_game() -> void:
 	GameManager.connect("hud_changed", _on_hud_changed)
 	ui.connect("option_selected", _on_option_chosen)
 	ui.connect("restart_requested", _on_restart)
+	ui.connect("shop_requested", _on_shop_requested)
 
 	SpawnManager.reset()
 	ui.init_hud()
-	init_run_phases()
-	GameManager.start_run(world, player)
+	GameManager.start_run(world, player, GameManager.game_mode, GameManager.short_world, GameManager.short_stage)
+	# 阶段机：长局按地图多阶段；短局按单一计时（4 分刷 Boss、5 分强制结束）
+	if GameManager.game_mode == "short":
+		_init_short_run()
+	else:
+		init_run_phases()
 	if GameManager.difficulty_id == "extreme":
 		ui.show_perf_warning("⚠ 极端模式：敌人数量极多，低端设备可能出现卡顿")
 	player.setup_character(DataTables.characters["default"])
@@ -175,9 +190,13 @@ func _start_game() -> void:
 	if _cli_god():
 		player.god_mode = true
 		push_warning("[main] 无头测试免伤模式已启用（--god）")
-	# 开场旁白（诸天万界世界观）
+	# 开场旁白（诸天万界世界观）：短局用专属分段剧情，长局用世界总剧情
 	var m = GameManager.current_map
-	if m.has("story_intro") and ui != null:
+	if GameManager.game_mode == "short" and m.has("short_story") and ui != null:
+		var ss = m["short_story"]
+		var idx = clamp(GameManager.short_stage - 1, 0, ss.size() - 1)
+		ui.show_story(m.get("world", ""), m.get("name", "未知界域") + " · 短局第 %d 局" % GameManager.short_stage, ss[idx])
+	elif m.has("story_intro") and ui != null:
 		ui.show_story(m.get("world", ""), m.get("name", "未知界域"), m.get("story_intro", ""))
 
 	# 按模式进入（solo/host 走本地权威分支；guest 走远端渲染 —— 世界已在上面构建）
@@ -239,7 +258,10 @@ func _process(delta: float) -> void:
 	GameManager.run_time += delta
 	GameManager.enemy_scale = _waves_scale(GameManager.run_time)
 	_update_level_unlocks()
-	_update_phases(delta)
+	if GameManager.game_mode == "short":
+		_update_short_phases(delta)
+	else:
+		_update_phases(delta)
 	SpawnManager.update(GameManager.run_time, delta, world, self)
 	_update_chests(delta)
 	camera.global_position = camera.global_position.lerp(player.global_position, min(1.0, delta * 8.0))
@@ -343,6 +365,50 @@ func _end_boss_phase(ph: Dictionary) -> void:
 		# 新阶段开局：随机位置自然生成 15 个宝箱
 		spawn_phase_chests(15)
 
+## 短局模式初始化：单一计时线（4 分刷 1 个 Boss、5 分到点强制结束）
+func _init_short_run() -> void:
+	var md = DataTables.modes["short"]
+	short_boss_at = float(md.get("boss_at", 240))
+	short_end_at = float(md.get("duration", 300))
+	short_t = 0.0
+	short_boss_spawned = false
+	boss_uids.clear()
+	boss_defeated = false
+	last_level = 0
+	_unlock_announced.clear()
+	SpawnManager.unlocked.clear()
+	chest_timer = 0.0
+	if ui != null:
+		ui.set_stage(0, "survival")
+		ui.info("短局模式：%d 分钟，%d 分刷 Boss！" % [int(short_end_at / 60.0), int(short_boss_at / 60.0)], Color(0.5, 0.9, 1.0))
+		ui.info("第 %d 界 · %s · 短局第 %d 局" % [int(GameManager.current_map.get("order", 1)), GameManager.current_map.get("name", ""), GameManager.short_stage], Color(0.9, 0.8, 0.4))
+	spawn_phase_chests(15)
+
+## 短局阶段推进：boss_at 刷一个 Boss；end_at 到点强制结束（不论 Boss 是否死亡，标记通关）
+func _update_short_phases(delta: float) -> void:
+	short_t += delta
+	if not short_boss_spawned and short_t >= short_boss_at:
+		short_boss_spawned = true
+		var bid = ""
+		var phases0 = GameManager.current_map.get("phases", [])
+		if phases0.size() > 0:
+			bid = phases0[0].get("boss_enemy", "")
+		if DataTables.enemies.has(bid):
+			var uid = EnemyManager.spawn(bid, rand_spawn_pos(), GameManager.enemy_scale)
+			if uid >= 0:
+				boss_uids.append(uid)
+			if ui != null:
+				ui.info("BOSS战开启！！ " + DataTables.enemies[bid].name + " 将追杀你！", Color(1.0, 0.3, 0.3), true)
+				ui.set_stage(0, "boss")
+	if short_t >= short_end_at:
+		if not boss_defeated:
+			for uid in boss_uids:
+				EnemyManager.despawn_uid(uid)
+			boss_uids.clear()
+			if ui != null:
+				ui.info("时间到！你撑过了短局！", Color(0.8, 1.0, 0.8))
+		GameManager.end_run("win")
+
 ## ---- 生成 ----
 func unlocked_non_boss() -> Array:
 	var out = []
@@ -445,6 +511,10 @@ func on_enemy_died(snap: Dictionary) -> void:
 	if is_boss:
 		spawn_gem(snap.pos, "magnet", 0)
 		spawn_chest_at(snap.pos, 5)
+		# 绿宝石特殊掉落：不论长局/短局，击杀 Boss 随机掉 1~5 颗（用于局外高级强化 / 局内高级道具）
+		var ne = randi_range(1, 5)
+		for i in range(ne):
+			spawn_gem(snap.pos + Vector2(randf() * 70.0 - 35.0, randf() * 70.0 - 35.0), "emerald", 1)
 	if player.hp < player.max_hp * 0.6 and randf() < 0.05:
 		spawn_gem(snap.pos, "heal", 0)
 
@@ -602,6 +672,11 @@ func _on_restart() -> void:
 	get_tree().paused = false
 	get_tree().reload_current_scene()
 
+## 暂停菜单「商店」按钮请求：打开局内强化商店
+func _on_shop_requested() -> void:
+	if ui != null:
+		ui.show_shop()
+
 # ==========================================================================
 # 联机接入层（零成本：WebSocket 中继 + host 权威）
 # ==========================================================================
@@ -656,12 +731,41 @@ func _build_net_panel() -> void:
 	vbox.add_child(title)
 
 	var subtitle = Label.new()
-	subtitle.text = "请选择一种开始方式（联机采用零成本 WebSocket 中继）"
+	subtitle.text = "请选择模式与开始方式（联机采用零成本 WebSocket 中继）"
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitle.add_theme_font_size_override("font_size", 16)
 	subtitle.add_theme_color_override("font_color", Color(0.7, 0.75, 0.85))
 	subtitle.add_theme_font_override("font", cjk)
 	vbox.add_child(subtitle)
+
+	# 模式选择：长局(20分) / 短局(5分)
+	var mode_row = HBoxContainer.new()
+	mode_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	mode_row.add_theme_constant_override("separation", 16)
+	vbox.add_child(mode_row)
+	_b_long = Button.new()
+	_b_long.text = "长局 · 20 分钟"
+	_b_long.add_theme_font_override("font", cjk)
+	_b_long.add_theme_font_size_override("font_size", 20)
+	_b_long.custom_minimum_size = Vector2(220, 50)
+	_b_long.connect("pressed", func(): _set_sel_mode("long"))
+	mode_row.add_child(_b_long)
+	_b_short = Button.new()
+	_b_short.text = "短局 · 5 分钟"
+	_b_short.add_theme_font_override("font", cjk)
+	_b_short.add_theme_font_size_override("font_size", 20)
+	_b_short.custom_minimum_size = Vector2(220, 50)
+	_b_short.connect("pressed", func(): _set_sel_mode("short"))
+	mode_row.add_child(_b_short)
+
+	_short_prog_label = Label.new()
+	_short_prog_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_short_prog_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_short_prog_label.add_theme_font_size_override("font_size", 14)
+	_short_prog_label.add_theme_color_override("font_color", Color(0.6, 0.9, 0.7))
+	_short_prog_label.add_theme_font_override("font", cjk)
+	vbox.add_child(_short_prog_label)
+	_set_sel_mode(_sel_mode)   # 初始化高亮 + 进度文案
 
 	var b_solo = Button.new()
 	b_solo.text = "单人游戏（跳过联机）"
@@ -747,19 +851,65 @@ func _set_status(s: String) -> void:
 ## 选择「单人游戏」：直接进入本地一局（不连中继）
 func _on_choose_solo() -> void:
 	GameManager.net_mode = GameManager.NetMode.SOLO
+	if _sel_mode == "short":
+		_prepare_short()
+	GameManager.game_mode = _sel_mode
 	_start_game()
 
 ## 选择「创建房间」：以主机身份连接中继，连上后再真正开局
 func _on_choose_host(room: String, url: String) -> void:
 	GameManager.net_mode = GameManager.NetMode.HOST
+	if _sel_mode == "short":
+		_prepare_short()
+	GameManager.game_mode = _sel_mode
 	NetManager.connect_relay(url, room, true)
 	_set_status("正在创建房间「%s」并连接…" % room)
 
 ## 选择「加入房间」：以客机身份连接中继，连上后再真正开局
 func _on_choose_guest(room: String, url: String) -> void:
 	GameManager.net_mode = GameManager.NetMode.GUEST
+	if _sel_mode == "short":
+		_prepare_short()
+	GameManager.game_mode = _sel_mode
 	NetManager.connect_relay(url, room, false)
 	_set_status("正在加入房间「%s」…" % room)
+
+## 切换大厅选中模式（长局 / 短局），刷新高亮与短局进度文案
+func _set_sel_mode(mode: String) -> void:
+	_sel_mode = mode
+	if _b_long != null:
+		_b_long.disabled = (mode == "long")
+		_b_long.add_theme_color_override("font_color", Color(1, 1, 1, 1) if mode == "long" else Color(0.6, 0.65, 0.75))
+	if _b_short != null:
+		_b_short.disabled = (mode == "short")
+		_b_short.add_theme_color_override("font_color", Color(1, 1, 1, 1) if mode == "short" else Color(0.6, 0.65, 0.75))
+	_refresh_short_prog()
+
+func _refresh_short_prog() -> void:
+	if _short_prog_label == null:
+		return
+	if _sel_mode != "short":
+		_short_prog_label.text = "短局：每世界 3 局，全通关解锁下一界（Boss 掉落绿宝石）"
+		_short_prog_label.add_theme_color_override("font_color", Color(0.6, 0.65, 0.75))
+		return
+	var nxt = SaveManager.short_next()
+	if nxt.is_empty():
+		_short_prog_label.text = "短局进度：全部世界已通关！可重复挑战最后世界第 3 局。"
+		return
+	var w = DataTables.maps.get(nxt.world, {})
+	_short_prog_label.text = "短局进度：下一局 → 第%s界·%s 第 %d 局 / 3" % [str(w.get("order", "?")), str(w.get("name", nxt.world)), int(nxt.stage)]
+
+## 短局：确定本局世界与第几局（取下一个未通关的短局；全通后允许重复最后世界）
+func _prepare_short() -> void:
+	var nxt = SaveManager.short_next()
+	if nxt.is_empty():
+		var ids = DataTables.maps.keys()
+		ids.sort_custom(func(a, b): return int(DataTables.maps[a].get("order", 99)) < int(DataTables.maps[b].get("order", 99)))
+		var last = ids[ids.size() - 1] if not ids.is_empty() else "zombie"
+		nxt = {"world": last, "stage": 3}
+	GameManager.short_world = nxt.world
+	GameManager.short_stage = int(nxt.stage)
+	GameManager.set_map(nxt.world)
 
 func _connect_as(is_host: bool, room: String, url: String) -> void:
 	GameManager.net_mode = GameManager.NetMode.HOST if is_host else GameManager.NetMode.GUEST
@@ -1014,3 +1164,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			# 仅开局后允许用 N 开关联机面板；开局前面板是「开始方式」闸门，不响应 N
 			if _game_started and net_panel != null:
 				net_panel.visible = not net_panel.visible
+		elif event.keycode == KEY_B:
+			# B 键开关局内强化商店（暂停态打开，避免与升级/结算面板冲突）
+			if _game_started and ui != null:
+				ui.toggle_shop()

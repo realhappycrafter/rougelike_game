@@ -10,6 +10,7 @@ var playing = false
 var run_time = 0.0
 var kills = 0
 var gold = 0
+var emerald = 0          # 局内绿宝石（Boss 掉落，局末存入 global_emerald，用于局外/局内高级消耗）
 var level = 1
 var exp = 0
 var exp_needed = 0
@@ -22,6 +23,11 @@ var diff = { "enemy_hp": 1.0, "enemy_dmg": 1.0, "exp": 1.0, "coin": 1.0, "spawn"
 # 地图系统（诸天万界，顺序解锁，难度逐级递增）
 var map_id = "zombie"
 var current_map: Dictionary = {}
+
+# 游戏模式（长局 / 短局）与短局进度标记（由 main 在开局前设置）
+var game_mode: String = "long"     # "long" | "short"
+var short_world: String = ""       # 短局当前世界 id
+var short_stage: int = 1          # 短局当前第几局（1..3）
 
 # 局外强化乘数（由 meta_upgrades 的 gold_gain / exp_gain 推导）
 var meta_gold_mult = 1.0
@@ -86,19 +92,31 @@ func compute_meta_multipliers() -> void:
 		var lvl = float(SaveManager.get_meta_level("exp_gain"))
 		meta_exp_mult = 1.0 + float(DataTables.meta_upgrades["exp_gain"]["per_level"]) * lvl
 
-func start_run(p_world, p_player) -> void:
+func start_run(p_world, p_player, mode: String = "long", short_world_id: String = "", short_stage_idx: int = 1) -> void:
 	world = p_world
 	player = p_player
+	game_mode = mode if DataTables.modes.has(mode) else "long"
+	short_world = short_world_id
+	short_stage = short_stage_idx
 	playing = true
 	run_time = 0.0
 	kills = 0
 	gold = 0
+	emerald = 0
 	level = 1
 	exp = 0
 	enemy_scale = 1.0
 	pending_levels = 0
 	level_up_open = false
 	red_reward_queued = false
+	# 模式平衡：把倍率叠加到 diff 上（重算 base 后再乘，避免重开叠加）
+	set_difficulty(difficulty_id)
+	var md = DataTables.modes[game_mode]
+	diff.enemy_hp *= float(md.get("hp_mult", 1.0))
+	diff.enemy_dmg *= float(md.get("hp_mult", 1.0))
+	diff.exp *= float(md.get("exp_mult", 1.0))
+	diff.coin *= float(md.get("exp_mult", 1.0))
+	diff.spawn *= float(md.get("spawn_mult", 1.0))
 	exp_needed = exp_need(1)
 	emit_signal("hud_changed")
 
@@ -190,6 +208,9 @@ func add_kill() -> void:
 	kills += 1
 	emit_signal("hud_changed")
 
+func add_emerald(n: int) -> void:
+	emerald += int(n)
+
 func end_run(reason: String) -> void:
 	if not playing:
 		return
@@ -198,12 +219,19 @@ func end_run(reason: String) -> void:
 		"time": run_time,
 		"kills": kills,
 		"gold": gold,
+		"emerald": emerald,
 		"level": level,
 		"reason": reason
 	}
-	# 通关（生存到 20 分钟并清完 Boss）则记录地图进度并解锁下一界
+	# 绿宝石：局末存入全局绿宝石（用于局外高级强化与局内高级道具）
+	if emerald > 0:
+		SaveManager.add_emerald(emerald)
+	# 通关（生存到时长终点并清完 Boss）则记录地图进度并解锁下一界
 	if reason == "win" and map_id != "":
 		SaveManager.mark_map_cleared(map_id)
+		# 短局模式：标记当前世界/局次通关，推进短局进度（解锁下一世界）
+		if game_mode == "short" and short_world != "":
+			SaveManager.mark_short_stage(short_world, short_stage)
 	SaveManager.add_gold(gold)
 	SaveManager.record_run(SaveManager.get_active_slot(), run_time, level)
 	emit_signal("run_ended", stats)

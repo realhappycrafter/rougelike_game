@@ -29,7 +29,15 @@ func _draw():
 		"coin":   c = Color(1, 0.85, 0.2)
 		"heal":   c = Color(1, 0.4, 0.5)
 		"magnet": c = Color(0.4, 0.7, 1)
+		"emerald": c = Color(0.2, 1.0, 0.6)
 	draw_circle(Vector2.ZERO, 5.0, c)
+	# 绿宝石：画成发光菱形（区别于经验绿圆）
+	if type == "emerald":
+		var pts = PackedVector2Array([Vector2(0, -7), Vector2(6, 0), Vector2(0, 7), Vector2(-6, 0)])
+		draw_colored_polygon(pts, c)
+		draw_colored_polygon(pts, Color(1, 1, 1, 0.5))
+		var inner = PackedVector2Array([Vector2(0, -3), Vector2(3, 0), Vector2(0, 3), Vector2(-3, 0)])
+		draw_colored_polygon(inner, Color(1, 1, 1, 0.9))
 
 func _process(delta: float) -> void:
 	if not alive or not GameManager.playing:
@@ -55,6 +63,8 @@ func collect() -> void:
 			GameManager.add_exp(value)
 		"coin":
 			GameManager.gold += int(round(float(value) * GameManager.meta_gold_mult))
+		"emerald":
+			GameManager.add_emerald(value)
 		"heal":
 			if GameManager.player:
 				var pl = GameManager.player

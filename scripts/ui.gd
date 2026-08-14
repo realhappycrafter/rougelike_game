@@ -5,6 +5,7 @@ extends Control
 
 signal option_selected(index: int)
 signal restart_requested()
+signal shop_requested()
 
 var timer_label: Label
 var hp_bar: ProgressBar
@@ -13,6 +14,7 @@ var exp_bar: ProgressBar
 var level_label: Label
 var kill_label: Label
 var gold_label: Label
+var emerald_label: Label
 var weapon_label: Label
 
 var enemy_label: Label      # 实时敌人计数（HUD 顶部）
@@ -35,6 +37,13 @@ var results_dim: ColorRect
 var pause_panel: Panel
 var pause_dim: ColorRect
 var paused: bool = false
+
+# 局内强化商店
+var shop_panel: Panel
+var shop_dim: ColorRect
+var shop_list: VBoxContainer
+var shop_gold_label: Label
+var shop_emerald_label: Label
 
 var _vs = Vector2(1920, 1080)
 
@@ -101,6 +110,12 @@ func init_hud() -> void:
 	gold_label.add_theme_font_size_override("font_size", int(16 * _f()))
 	add_child(gold_label)
 
+	emerald_label = Label.new()
+	emerald_label.position = Vector2(310 * _f(), _vs.y - 20 * _f())
+	emerald_label.add_theme_font_size_override("font_size", int(16 * _f()))
+	emerald_label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.65))
+	add_child(emerald_label)
+
 	weapon_label = Label.new()
 	weapon_label.position = Vector2(_vs.x - 320 * _f(), 15)
 	weapon_label.add_theme_font_size_override("font_size", int(16 * _f()))
@@ -159,12 +174,13 @@ func init_hud() -> void:
 		log_labels.append(l)
 
 	# HUD 文字半透明暗底框（可读性）
-	for lbl in [timer_label, enemy_label, stage_label, hp_label, kill_label, gold_label, weapon_label]:
+	for lbl in [timer_label, enemy_label, stage_label, hp_label, kill_label, gold_label, emerald_label, weapon_label]:
 		_label_bg(lbl)
 
 	_build_levelup_panel()
 	_build_results_panel()
 	_build_pause_panel()
+	_build_shop_panel()
 
 func update_hud() -> void:
 	if timer_label == null:
@@ -183,6 +199,7 @@ func update_hud() -> void:
 	level_label.text = "Lv " + str(GameManager.level)
 	kill_label.text = "击杀 " + str(GameManager.kills)
 	gold_label.text = "金币 " + str(GameManager.gold)
+	emerald_label.text = "绿宝石 " + str(GameManager.emerald)
 	if p:
 		var s = ""
 		for wid in p.weapons.keys():
@@ -290,6 +307,7 @@ func show_results(stats: Dictionary) -> void:
 		"击杀  " + str(stats["kills"]) + "\n" +
 		"等级  " + str(stats["level"]) + "\n" +
 		"金币  +" + str(stats["gold"]) + "\n" +
+		"绿宝石 +" + str(stats.get("emerald", 0)) + "\n" +
 		"原因  " + str(stats["reason"])
 	)
 	results_panel.visible = true
@@ -328,16 +346,24 @@ func _build_pause_panel() -> void:
 	var resume = Button.new()
 	resume.text = "继续"
 	resume.add_theme_font_size_override("font_size", int(24 * f))
-	resume.size = Vector2(180 * f, 56 * f)
-	resume.position = Vector2(pause_panel.size.x / 2.0 - 90 * f, 110 * f)
+	resume.size = Vector2(180 * f, 50 * f)
+	resume.position = Vector2(pause_panel.size.x / 2.0 - 90 * f, 100 * f)
 	resume.connect("pressed", _on_resume)
 	pause_panel.add_child(resume)
+
+	var shop_btn = Button.new()
+	shop_btn.text = "强化商店（B）"
+	shop_btn.add_theme_font_size_override("font_size", int(24 * f))
+	shop_btn.size = Vector2(180 * f, 50 * f)
+	shop_btn.position = Vector2(pause_panel.size.x / 2.0 - 90 * f, 160 * f)
+	shop_btn.connect("pressed", _on_shop_pressed)
+	pause_panel.add_child(shop_btn)
 
 	var to_menu = Button.new()
 	to_menu.text = "回主菜单"
 	to_menu.add_theme_font_size_override("font_size", int(24 * f))
-	to_menu.size = Vector2(180 * f, 56 * f)
-	to_menu.position = Vector2(pause_panel.size.x / 2.0 - 90 * f, 180 * f)
+	to_menu.size = Vector2(180 * f, 50 * f)
+	to_menu.position = Vector2(pause_panel.size.x / 2.0 - 90 * f, 220 * f)
 	to_menu.connect("pressed", _on_pause_menu)
 	pause_panel.add_child(to_menu)
 
@@ -364,6 +390,122 @@ func toggle_pause() -> void:
 	if results_panel != null and results_panel.visible:
 		return
 	_set_paused(not paused)
+
+## ---------- 局内强化商店 ----------
+func _on_shop_pressed() -> void:
+	emit_signal("shop_requested")
+
+func _build_shop_panel() -> void:
+	var f = _f()
+	shop_dim = ColorRect.new()
+	shop_dim.color = Color(0.02, 0.02, 0.05, 0.7)
+	shop_dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	shop_dim.visible = false
+	add_child(shop_dim)
+	shop_panel = Panel.new()
+	shop_panel.visible = false
+	shop_panel.size = Vector2(580, 560) * f
+	shop_panel.position = (_vs - shop_panel.size) / 2.0
+	add_child(shop_panel)
+	var t = Label.new()
+	t.text = "强化商店（金币 / 绿宝石，仅本局有效）"
+	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	t.add_theme_font_size_override("font_size", int(23 * f))
+	t.position = Vector2(10 * f, 10 * f)
+	t.size = Vector2(shop_panel.size.x - 20 * f, 34 * f)
+	shop_panel.add_child(t)
+	shop_gold_label = Label.new()
+	shop_gold_label.position = Vector2(16 * f, 48 * f)
+	shop_gold_label.add_theme_font_size_override("font_size", int(20 * f))
+	shop_gold_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35))
+	shop_panel.add_child(shop_gold_label)
+	shop_emerald_label = Label.new()
+	shop_emerald_label.position = Vector2(260 * f, 48 * f)
+	shop_emerald_label.add_theme_font_size_override("font_size", int(20 * f))
+	shop_emerald_label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.65))
+	shop_panel.add_child(shop_emerald_label)
+	var sc = ScrollContainer.new()
+	sc.name = "shop_scroll"
+	sc.position = Vector2(12 * f, 84 * f)
+	sc.size = Vector2(shop_panel.size.x - 24 * f, 410 * f)
+	shop_panel.add_child(sc)
+	shop_list = VBoxContainer.new()
+	shop_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	shop_list.add_theme_constant_override("separation", int(6 * f))
+	sc.add_child(shop_list)
+	var close = Button.new()
+	close.text = "关闭（B）"
+	close.add_theme_font_size_override("font_size", int(20 * f))
+	close.size = Vector2(160 * f, 44 * f)
+	close.position = Vector2(shop_panel.size.x / 2.0 - 80 * f, shop_panel.size.y - 54 * f)
+	close.connect("pressed", hide_shop)
+	shop_panel.add_child(close)
+
+func _refresh_shop() -> void:
+	if shop_list == null:
+		return
+	var f = _f()
+	for c in shop_list.get_children():
+		c.queue_free()
+	shop_gold_label.text = "金币：%d" % GameManager.gold
+	shop_emerald_label.text = "绿宝石：%d" % GameManager.emerald
+	var cats = {"consumable": "消耗品（一次性道具）", "weapon": "武器升级", "attribute": "属性提升（本局）"}
+	for cat in cats.keys():
+		var hdr = Label.new()
+		hdr.text = cats[cat]
+		hdr.add_theme_font_size_override("font_size", int(20 * f))
+		hdr.add_theme_color_override("font_color", Color(0.7, 0.9, 1.0))
+		shop_list.add_child(hdr)
+		for id in DataTables.shop_items.keys():
+			var it = DataTables.shop_items[id]
+			if str(it.get("category", "")) != cat:
+				continue
+			var b = Button.new()
+			b.custom_minimum_size = Vector2(shop_panel.size.x - 60 * f, 46 * f)
+			b.add_theme_font_size_override("font_size", int(17 * f))
+			var cur = str(it.get("currency", "gold"))
+			var coststr = "%d 金" % int(it.cost) if cur == "gold" else "%d 绿宝石" % int(it.cost)
+			b.text = "%s ｜ %s ｜ %s" % [str(it.get("name", "")), str(it.get("desc", "")), coststr]
+			b.disabled = not ShopManager.can_afford(id)
+			b.connect("pressed", _on_buy_shop.bind(id))
+			shop_list.add_child(b)
+
+func _on_buy_shop(id: String) -> void:
+	var p = GameManager.player
+	if ShopManager.buy(id, p):
+		info("购买成功：" + str(DataTables.shop_items[id].get("name", "")), Color(0.6, 1.0, 0.6))
+		_refresh_shop()
+	else:
+		info("货币不足，无法购买", Color(1.0, 0.5, 0.5))
+
+func show_shop() -> void:
+	if levelup_panel != null and levelup_panel.visible:
+		return
+	if results_panel != null and results_panel.visible:
+		return
+	if shop_panel == null:
+		return
+	if pause_panel != null:
+		pause_panel.visible = false
+	_refresh_shop()
+	shop_dim.visible = true
+	shop_panel.visible = true
+	get_tree().paused = true
+
+func hide_shop() -> void:
+	if shop_panel == null:
+		return
+	shop_panel.visible = false
+	shop_dim.visible = false
+	get_tree().paused = false
+
+func toggle_shop() -> void:
+	if shop_panel == null:
+		return
+	if shop_panel.visible:
+		hide_shop()
+	else:
+		show_shop()
 
 func _process(delta: float) -> void:
 	if enemy_label != null and EnemyManager != null:
