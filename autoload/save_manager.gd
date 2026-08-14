@@ -198,25 +198,35 @@ func unlock_map(id: String) -> void:
 		data["map_progress"]["unlocked"].append(id)
 		save_data()
 
-## 标记通关：加入 cleared，并解锁下一 order 的地图
+## 标记长局通关：加入 cleared，并按「长局+短局」联合条件尝试解锁下一界
 func mark_map_cleared(id: String) -> void:
 	if not data["map_progress"]["cleared"].has(id):
 		data["map_progress"]["cleared"].append(id)
-	if DataTables.maps.has(id):
-		var next_order = int(DataTables.maps[id]["order"]) + 1
-		for mid in DataTables.maps.keys():
-			if int(DataTables.maps[mid]["order"]) == next_order:
-				if not data["map_progress"]["unlocked"].has(mid):
-					data["map_progress"]["unlocked"].append(mid)
-				break
-	save_data()
+		save_data()
+	_maybe_unlock_next(id)
 
-## 标记某个短局通关（去重）
+## 当某世界「长局已通关 且 短局 3 局全通」时解锁其下一 order 世界。
+## 必须两条件同时满足，避免只通关其一就开下一界（短局单局通关=滥用解锁的回归点）。
+func _maybe_unlock_next(world_id: String) -> void:
+	if not DataTables.maps.has(world_id):
+		return
+	if not (is_map_cleared(world_id) and short_world_cleared(world_id)):
+		return
+	var next_order = int(DataTables.maps[world_id]["order"]) + 1
+	for mid in DataTables.maps.keys():
+		if int(DataTables.maps[mid]["order"]) == next_order:
+			if not data["map_progress"]["unlocked"].has(mid):
+				data["map_progress"]["unlocked"].append(mid)
+				save_data()
+			break
+
+## 标记某个短局通关（去重），并据联合条件尝试解锁下一界
 func mark_short_stage(world: String, stage: int) -> void:
 	var k = _short_key(world, stage)
 	if not data["short_cleared"].has(k):
 		data["short_cleared"].append(k)
 		save_data()
+	_maybe_unlock_next(world)
 
 ## 是否已通关
 func is_map_cleared(id: String) -> bool:
@@ -226,17 +236,11 @@ func is_map_cleared(id: String) -> bool:
 func _short_key(world: String, stage: int) -> String:
 	return str(world) + ":" + str(stage)
 
-## 某世界是否解锁：第一界默认解锁；其余需上一界 3 局全部通关
+## 某世界是否解锁（短局模式）：与长局共用「map_progress.unlocked」门槛。
+## 该列表仅在「长局通关 且 短局 3 局全通」时由 _maybe_unlock_next 填充，
+## 因此短局与长局共用同一套解锁判定（需两者皆通关）。
 func is_short_world_unlocked(world_id: String) -> bool:
-	if not DataTables.maps.has(world_id):
-		return false
-	var order = int(DataTables.maps[world_id]["order"])
-	if order <= 1:
-		return true
-	for mid in DataTables.maps.keys():
-		if int(DataTables.maps[mid]["order"]) == order - 1:
-			return short_world_cleared(mid)
-	return false
+	return is_map_unlocked(world_id)
 
 ## 某世界 3 个短局是否全部通关
 func short_world_cleared(world_id: String) -> bool:

@@ -226,12 +226,15 @@ func end_run(reason: String) -> void:
 	# 绿宝石：局末存入全局绿宝石（用于局外高级强化与局内高级道具）
 	if emerald > 0:
 		SaveManager.add_emerald(emerald)
-	# 通关（生存到时长终点并清完 Boss）则记录地图进度并解锁下一界
+	# 通关（生存到时长终点并清完 Boss）则记录进度。
+	# 短局只记短局通关（推进短局进度）；长局记长局通关。
+	# 下一界解锁需「长局通关 且 短局 3 局全通」同时满足（见 SaveManager._maybe_unlock_next），
+	# 因此短局单局胜利不再单独解锁下一界。
 	if reason == "win" and map_id != "":
-		SaveManager.mark_map_cleared(map_id)
-		# 短局模式：标记当前世界/局次通关，推进短局进度（解锁下一世界）
 		if game_mode == "short" and short_world != "":
 			SaveManager.mark_short_stage(short_world, short_stage)
+		else:
+			SaveManager.mark_map_cleared(map_id)
 	SaveManager.add_gold(gold)
 	SaveManager.record_run(SaveManager.get_active_slot(), run_time, level)
 	emit_signal("run_ended", stats)

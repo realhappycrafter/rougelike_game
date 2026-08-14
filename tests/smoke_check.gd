@@ -120,11 +120,12 @@ func _check_meta_stats() -> void:
 		_ok(int(u.get("cost_base", 0)) > 0, "meta %s 的 cost_base 非法" % id)
 		_ok(float(u.get("cost_growth", 0.0)) >= 1.0, "meta %s 的 cost_growth 应 >= 1.0" % id)
 
-## 5) 通关解锁链：逐张通关应依次解锁下一界，且不越级
-## 用深拷贝备份真实存档，验证后原样写回，避免污染玩家进度。
+## 5) 通关解锁链（新规则）：下一界解锁需「长局通关 且 短局 3 局全通」同时满足，
+##    仅通关其一不得解锁下一界。备份后写回，避免污染玩家进度。
 func _check_unlock_chain() -> void:
 	var backup = SaveManager.data.duplicate(true)
 	SaveManager.data["map_progress"] = {"unlocked": ["zombie"], "cleared": []}
+	SaveManager.data["short_cleared"] = []
 	var ids = []
 	for i in range(1, DataTables.maps.size() + 1):
 		for mid in DataTables.maps.keys():
@@ -136,11 +137,19 @@ func _check_unlock_chain() -> void:
 		if i + 1 < ids.size():
 			_ok(not SaveManager.is_map_unlocked(ids[i + 1]),
 				"通关 %s 之前，%s 不应解锁" % [ids[i], ids[i + 1]])
+		# 仅通关长局：不应解锁下一界（需配合短局）
 		SaveManager.mark_map_cleared(ids[i])
-		_ok(SaveManager.is_map_cleared(ids[i]), "%s 通关后应标记 cleared" % ids[i])
+		_ok(SaveManager.is_map_cleared(ids[i]), "%s 长局通关后应标记 cleared" % ids[i])
+		if i + 1 < ids.size():
+			_ok(not SaveManager.is_map_unlocked(ids[i + 1]),
+				"仅通关长局 %s 不应解锁 %s" % [ids[i], ids[i + 1]])
+		# 再通关短局 3 局：此时两条件满足，下一界应解锁
+		for s in range(1, 4):
+			SaveManager.mark_short_stage(ids[i], s)
+		_ok(SaveManager.short_world_cleared(ids[i]), "%s 短局 3 局应全清" % ids[i])
 		if i + 1 < ids.size():
 			_ok(SaveManager.is_map_unlocked(ids[i + 1]),
-				"通关 %s 后应解锁 %s" % [ids[i], ids[i + 1]])
+				"长局+短局双通 %s 后应解锁 %s" % [ids[i], ids[i + 1]])
 	# 还原
 	SaveManager.data = backup
 	SaveManager.save_data()
@@ -394,9 +403,10 @@ func _check_emerald_meta() -> void:
 	SaveManager.data = backup
 	SaveManager.save_data()
 
-## 13) 短局进度：每世界 3 局，全通关解锁下一世界
+## 13) 短局进度：每世界 3 局；但仅短局全通不得解锁下一界，需配合长局通关
 func _check_short_progression() -> void:
 	var backup = SaveManager.data.duplicate(true)
+	SaveManager.data["map_progress"] = {"unlocked": ["zombie"], "cleared": []}
 	SaveManager.data["short_cleared"] = []
 	var ids = []
 	for i in range(1, DataTables.maps.size() + 1):
@@ -408,17 +418,20 @@ func _check_short_progression() -> void:
 	# 默认应拿到第一个世界第 1 局
 	var nxt = SaveManager.short_next()
 	_ok(nxt == {"world": ids[0], "stage": 1}, "初始 short_next 应返回首世界第1局，实际 %s" % str(nxt))
-	# 第一世界 3 局全清 -> 标记 cleared
+	# 第一世界 3 局全清 -> 标记 cleared（但长局未通，下一界不应解锁）
 	for s in range(1, 4):
 		SaveManager.mark_short_stage(ids[0], s)
 	_ok(SaveManager.short_world_cleared(ids[0]), "标记 3 局后 %s 应视为全通关" % ids[0])
-	# 下一世界此时应解锁
-	_ok(SaveManager.is_short_world_unlocked(ids[1]), "上一世界全清后，下一世界 %s 应解锁" % ids[1])
+	# 仅短局全通：下一世界此时【不应】解锁
+	_ok(not SaveManager.is_short_world_unlocked(ids[1]), "仅短局全通，下一世界 %s 不应解锁" % ids[1])
+	# 再补长局通关 -> 两条件满足，下一界应解锁
+	SaveManager.mark_map_cleared(ids[0])
+	_ok(SaveManager.is_short_world_unlocked(ids[1]), "长局+短局双通后，下一世界 %s 应解锁" % ids[1])
 	var nxt2 = SaveManager.short_next()
-	_ok(nxt2 == {"world": ids[1], "stage": 1}, "首世界通关后 short_next 应推进到下一世界第1局，实际 %s" % str(nxt2))
+	_ok(nxt2 == {"world": ids[1], "stage": 1}, "首世界双通后 short_next 应推进到下一世界第1局，实际 %s" % str(nxt2))
 	# 中途世界不应解锁（跳跃）
 	if ids.size() >= 3:
-		_ok(not SaveManager.is_short_world_unlocked(ids[2]), "未通关第二世界时第三世界不应解锁")
+		_ok(not SaveManager.is_short_world_unlocked(ids[2]), "未双通第二世界时第三世界不应解锁")
 	SaveManager.data = backup
 	SaveManager.save_data()
 

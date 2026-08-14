@@ -889,12 +889,25 @@ func _refresh_short_prog() -> void:
 	if _short_prog_label == null:
 		return
 	if _sel_mode != "short":
-		_short_prog_label.text = "短局：每世界 3 局，全通关解锁下一界（Boss 掉落绿宝石）"
+		_short_prog_label.text = "短局：每世界 3 局，需【长局+短局都通关】才解锁下一界（Boss 掉落绿宝石）"
 		_short_prog_label.add_theme_color_override("font_color", Color(0.6, 0.65, 0.75))
 		return
 	var nxt = SaveManager.short_next()
 	if nxt.is_empty():
-		_short_prog_label.text = "短局进度：全部世界已通关！可重复挑战最后世界第 3 局。"
+		# 没有可推进的短局：可能是「全部已通关」，也可能是卡在「长局未通关」门槛
+		var need_long = false
+		var ids = DataTables.maps.keys()
+		ids.sort_custom(func(a, b): return int(DataTables.maps[a].get("order", 99)) < int(DataTables.maps[b].get("order", 99)))
+		for mid in ids:
+			if not SaveManager.is_map_unlocked(mid):
+				need_long = true
+				break
+			if not SaveManager.short_world_cleared(mid):
+				break
+		if need_long:
+			_short_prog_label.text = "短局进度：本世界短局已全通，需先通关对应【长局】才能解锁下一界。"
+		else:
+			_short_prog_label.text = "短局进度：全部世界已通关！可重复挑战最后世界第 3 局。"
 		return
 	var w = DataTables.maps.get(nxt.world, {})
 	_short_prog_label.text = "短局进度：下一局 → 第%s界·%s 第 %d 局 / 3" % [str(w.get("order", "?")), str(w.get("name", nxt.world)), int(nxt.stage)]
