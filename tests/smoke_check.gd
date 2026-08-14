@@ -379,6 +379,18 @@ func _check_modes() -> void:
 
 ## 12) 绿宝石计价局外强化：扣绿宝石而非金币，且金币不足不影响
 func _check_emerald_meta() -> void:
+	# 绿宝石强化平衡不变量：
+	# 1) 每个绿宝石强化的 per_level 必须 >= 同 stat 的金币强化（绿宝石是更高级货币，不能比金币弱）
+	# 2) 绿宝石价格需收敛（cost_base <= 3 且 cost_growth <= 1.7），避免太贵
+	var gold_per_stat = {}
+	for id in DataTables.meta_upgrades.keys():
+		var u = DataTables.meta_upgrades[id]
+		if str(u.get("currency", "gold")) == "emerald":
+			continue
+		var st = str(u.get("stat", ""))
+		var pl = float(u.get("per_level", 0.0))
+		if not gold_per_stat.has(st) or pl > gold_per_stat[st]:
+			gold_per_stat[st] = pl
 	var em_ids = []
 	for id in DataTables.meta_upgrades.keys():
 		if SaveManager.meta_upgrade_currency(id) == "emerald":
@@ -386,6 +398,15 @@ func _check_emerald_meta() -> void:
 	_ok(em_ids.size() >= 1, "应至少存在 1 个绿宝石计价的局外强化")
 	var backup = SaveManager.data.duplicate(true)
 	for id in em_ids:
+		var eu = DataTables.meta_upgrades[id]
+		var st = str(eu.get("stat", ""))
+		# 不变量 1：绿宝石每级收益 >= 金币同级
+		if gold_per_stat.has(st):
+			_ok(float(eu.get("per_level", 0.0)) >= gold_per_stat[st],
+				"绿宝石强化 %s(%s) 每级 %s 不应低于金币强化每级 %s" % [id, st, str(eu.get("per_level")), str(gold_per_stat[st])])
+		# 不变量 2：绿宝石价格收敛
+		_ok(int(eu.get("cost_base", 99)) <= 3, "%s 的绿宝石 cost_base 应 <=3，实际 %d" % [id, int(eu.get("cost_base", 99))])
+		_ok(float(eu.get("cost_growth", 9.0)) <= 1.7, "%s 的绿宝石 cost_growth 应 <=1.7，实际 %s" % [id, str(eu.get("cost_growth", 9.0))])
 		SaveManager.data["global_gold"] = 0
 		SaveManager.data["global_emerald"] = 999
 		SaveManager.data["meta_upgrades"] = {}
