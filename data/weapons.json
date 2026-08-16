@@ -5,7 +5,7 @@
     "pierce": 0, "area": 1.0, "knockback": 30, "duration": 0,
     "max_level": 8, "evolution": "infinite_knife",
     "desc": "自动射向最近的敌人",
-    "visual": {"shape": "dart", "color": [0.85,0.88,0.92], "color2": [1.0,1.0,1.0]},
+    "visual": {"shape": "dart", "color": [0.85,0.88,0.92], "color2": [1.0,1.0,1.0], "fx": {"trail": true, "glow": 0.3}},
     "level_desc": ["连发次数 +1", "伤害 +5", "穿透 +1", "弹速 +60", "再连发 +1", "伤害 +8", "进化：无限飞刀"]
   },
   "magic_wand": {
@@ -14,7 +14,7 @@
     "pierce": 1, "area": 1.0, "knockback": 20, "duration": 0,
     "max_level": 8, "evolution": "",
     "desc": "蓄力发射穿透魔法弹",
-    "visual": {"shape": "bolt", "color": [0.6,0.4,1.0], "color2": [0.9,0.8,1.0]},
+    "visual": {"shape": "bolt", "color": [0.6,0.4,1.0], "color2": [0.9,0.8,1.0], "fx": {"glow": 0.5, "particles": "spark"}},
     "level_desc": ["伤害 +4", "穿透 +1", "蓄力更快", "连发 +1", "伤害 +6", "穿透 +1", "终极魔法弹"]
   },
   "garlic": {
@@ -23,7 +23,7 @@
     "pierce": 0, "area": 1.0, "knockback": 0, "duration": 0,
     "max_level": 8, "evolution": "",
     "desc": "身边持续灼伤靠近的敌人",
-    "visual": {"shape": "default", "color": [0.30,0.85,0.35], "color2": [0.6,1.0,0.5]},
+    "visual": {"shape": "poison", "color": [0.30,0.85,0.35], "color2": [0.6,1.0,0.5], "fx": {"glow": 0.2, "particles": "bubble", "pulse": 0.4}},
     "level_desc": ["灼伤伤害 +2", "范围 +0.3", "持续更久", "伤害 +3", "范围 +0.5", "灼烧加深", "焚尽领域"]
   },
   "bible": {
@@ -32,7 +32,7 @@
     "pierce": 0, "area": 1.0, "knockback": 10, "duration": 0,
     "max_level": 8, "evolution": "",
     "desc": "环绕旋转的书页持续切割",
-    "visual": {"shape": "page", "color": [0.35,0.7,1.0], "color2": [0.8,0.92,1.0]},
+    "visual": {"shape": "page", "color": [0.35,0.7,1.0], "color2": [0.8,0.92,1.0], "fx": {"glow": 0.4}},
     "level_desc": ["书页 +1", "旋转伤害 +3", "转速提升", "书页 +1", "伤害 +5", "范围扩大", "神圣书阵"]
   },
   "whip": {
@@ -41,7 +41,7 @@
     "pierce": 1, "area": 1.5, "knockback": 60, "duration": 0,
     "max_level": 8, "evolution": "holy_whip",
     "desc": "近身横扫，高击退",
-    "visual": {"shape": "crescent", "color": [1.0,0.45,0.3], "color2": [1.0,0.7,0.4]},
+    "visual": {"shape": "crescent", "color": [1.0,0.45,0.3], "color2": [1.0,0.7,0.4], "fx": {"trail": true, "glow": 0.4}},
     "level_desc": ["伤害 +6", "横扫范围 +0.4", "击退 +20", "伤害 +10", "范围 +0.6", "击退 +30", "进化：神圣之鞭"]
   },
 
@@ -51,7 +51,7 @@
     "pierce": 0, "area": 1.0, "knockback": 0, "duration": 0,
     "max_level": 8, "evolution": "",
     "desc": "蓝银缠绕，持续束缚灼伤靠近的敌人",
-    "visual": {"shape": "vine", "color": [0.2,0.7,0.35], "color2": [0.5,0.95,0.5]},
+    "visual": {"shape": "vine", "color": [0.2,0.7,0.35], "color2": [0.5,0.95,0.5], "fx": {"glow": 0.2, "particles": "leaf"}},
     "level_desc": ["灼伤 +2", "范围 +0.3", "持续更久", "伤害 +3", "范围 +0.5", "缠缚加深", "蓝银领域"]
   },
   "dlu_hammer": {
@@ -60,7 +60,7 @@
     "pierce": 1, "area": 1.6, "knockback": 70, "duration": 0,
     "max_level": 8, "evolution": "holy_hammer",
     "desc": "昊天锤：近身重击，巨力击退",
-    "visual": {"shape": "hammer", "color": [0.6,0.4,0.25], "color2": [0.9,0.7,0.4]},
+    "visual": {"shape": "hammer", "color": [0.6,0.4,0.25], "color2": [0.9,0.7,0.4], "fx": {"glow": 0.5, "particles": "spark"}},
     "level_desc": ["伤害 +7", "横扫范围 +0.4", "击退 +25", "伤害 +11", "范围 +0.6", "击退 +35", "进化：神锤裂地"]
   },
   "dlu_tower": {
@@ -69,7 +69,7 @@
     "pierce": 0, "area": 1.3, "knockback": 0, "duration": 0,
     "max_level": 8, "evolution": "",
     "desc": "琉璃光环：范围真光灼烧",
-    "visual": {"shape": "tower", "color": [0.95,0.8,0.3], "color2": [1.0,0.95,0.6]},
+    "visual": {"shape": "tower", "color": [0.95,0.8,0.3], "color2": [1.0,0.95,0.6], "fx": {"glow": 0.4, "particles": "mote", "pulse": 0.3}},
     "level_desc": ["光焰 +1", "范围 +0.3", "持续更久", "伤害 +2", "范围 +0.4", "光耀加深", "琉璃净世"]
   },
   "dlu_phoenix": {
@@ -78,7 +78,7 @@
     "pierce": 1, "area": 1.0, "knockback": 20, "duration": 0,
     "max_level": 8, "evolution": "",
     "desc": "凤凰火线：灼烧弹道",
-    "visual": {"shape": "feather", "color": [1.0,0.5,0.1], "color2": [1.0,0.9,0.4]},
+    "visual": {"shape": "feather", "color": [1.0,0.5,0.1], "color2": [1.0,0.9,0.4], "fx": {"trail": true, "glow": 0.5, "particles": "ember"}},
     "level_desc": ["伤害 +5", "弹速 +40", "穿透 +1", "连发 +1", "伤害 +7", "穿透 +1", "涅槃火羽"]
   },
   "dlu_crossbow": {
@@ -87,7 +87,7 @@
     "pierce": 2, "area": 1.0, "knockback": 10, "duration": 0,
     "max_level": 8, "evolution": "",
     "desc": "连弩：多发穿透",
-    "visual": {"shape": "arrow", "color": [0.7,0.55,0.35], "color2": [0.95,0.85,0.6]},
+    "visual": {"shape": "arrow", "color": [0.7,0.55,0.35], "color2": [0.95,0.85,0.6], "fx": {"glow": 0.2}},
     "level_desc": ["伤害 +4", "连发 +1", "弹速 +40", "穿透 +1", "伤害 +6", "连发 +1", "千机弩阵"]
   },
   "dlu_rabbit": {
@@ -96,7 +96,7 @@
     "pierce": 0, "area": 1.2, "knockback": 30, "duration": 0,
     "max_level": 8, "evolution": "",
     "desc": "柔骨连环踢：环绕连击",
-    "visual": {"shape": "beast", "color": [0.95,0.95,0.98], "color2": [0.7,0.8,1.0]},
+    "visual": {"shape": "beast", "color": [0.95,0.95,0.98], "color2": [0.7,0.8,1.0], "fx": {"glow": 0.3}},
     "level_desc": ["伤害 +4", "踢击 +1", "范围 +0.3", "伤害 +6", "踢击 +1", "范围 +0.4", "无敌兔腿"]
   },
 
@@ -106,7 +106,7 @@
     "pierce": 1, "area": 1.0, "knockback": 15, "duration": 0,
     "max_level": 8, "evolution": "infinite_sword",
     "desc": "本命飞剑：御剑斩敌",
-    "visual": {"shape": "sword", "color": [0.8,0.9,1.0], "color2": [1.0,1.0,1.0]},
+    "visual": {"shape": "sword", "color": [0.8,0.9,1.0], "color2": [1.0,1.0,1.0], "fx": {"trail": true, "glow": 0.4, "particles": "spark"}},
     "level_desc": ["伤害 +6", "剑速 +40", "穿透 +1", "连发 +1", "伤害 +8", "穿透 +1", "进化：万剑归宗"]
   },
   "xx_treasure": {
@@ -115,7 +115,7 @@
     "pierce": 0, "area": 1.2, "knockback": 15, "duration": 0,
     "max_level": 8, "evolution": "",
     "desc": "法宝：环身护体斩",
-    "visual": {"shape": "treasure", "color": [0.7,0.5,1.0], "color2": [1.0,0.9,0.5]},
+    "visual": {"shape": "treasure", "color": [0.7,0.5,1.0], "color2": [1.0,0.9,0.5], "fx": {"glow": 0.5, "spin": 1.5}},
     "level_desc": ["伤害 +5", "法器 +1", "范围 +0.3", "伤害 +7", "法器 +1", "范围 +0.4", "万宝朝宗"]
   },
   "xx_talisman": {
@@ -124,7 +124,7 @@
     "pierce": 0, "area": 1.2, "knockback": 0, "duration": 0,
     "max_level": 8, "evolution": "",
     "desc": "符箓阵：持续真火",
-    "visual": {"shape": "talisman", "color": [0.95,0.75,0.2], "color2": [0.9,0.3,0.2]},
+    "visual": {"shape": "talisman", "color": [0.95,0.75,0.2], "color2": [0.9,0.3,0.2], "fx": {"glow": 0.3, "particles": "rune", "pulse": 0.3}},
     "level_desc": ["真火 +2", "范围 +0.3", "持续更久", "伤害 +3", "范围 +0.5", "符威加深", "天师法阵"]
   },
   "xx_thunder": {
@@ -133,7 +133,7 @@
     "pierce": 1, "area": 1.0, "knockback": 25, "duration": 0,
     "max_level": 8, "evolution": "",
     "desc": "掌心雷：落雷裂敌",
-    "visual": {"shape": "thunder", "color": [0.7,0.5,1.0], "color2": [1.0,0.95,0.3]},
+    "visual": {"shape": "thunder", "color": [0.7,0.5,1.0], "color2": [1.0,0.95,0.3], "fx": {"glow": 0.6, "flicker": true, "particles": "spark"}},
     "level_desc": ["伤害 +8", "雷速 +40", "穿透 +1", "连发 +1", "伤害 +10", "穿透 +1", "九天神雷"]
   },
   "xx_shanshui": {
@@ -142,7 +142,7 @@
     "pierce": 0, "area": 1.5, "knockback": 0, "duration": 0,
     "max_level": 8, "evolution": "",
     "desc": "山河图：封印领域",
-    "visual": {"shape": "landscape", "color": [0.3,0.4,0.55], "color2": [0.6,0.7,0.85]},
+    "visual": {"shape": "landscape", "color": [0.3,0.4,0.55], "color2": [0.6,0.7,0.85], "fx": {"glow": 0.2, "particles": "ink", "pulse": 0.2}},
     "level_desc": ["封印 +1", "范围 +0.4", "持续更久", "伤害 +2", "范围 +0.5", "山河浩大", "乾坤封印"]
   },
   "xx_swordarray": {
@@ -151,7 +151,7 @@
     "pierce": 0, "area": 1.4, "knockback": 20, "duration": 0,
     "max_level": 8, "evolution": "",
     "desc": "万剑归宗：剑阵环身",
-    "visual": {"shape": "sword_array", "color": [0.8,0.9,1.0], "color2": [1.0,1.0,1.0]},
+    "visual": {"shape": "sword_array", "color": [0.8,0.9,1.0], "color2": [1.0,1.0,1.0], "fx": {"trail": true, "glow": 0.4}},
     "level_desc": ["伤害 +5", "剑影 +1", "范围 +0.3", "伤害 +7", "剑影 +1", "范围 +0.4", "诛仙剑阵"]
   }
 }

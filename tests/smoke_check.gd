@@ -4,6 +4,7 @@ extends Node
 ## 只读校验，不写存档；任何一项失败以非零退出码结束，便于 CI/脚本捕获。
 
 const NetSerialize = preload("res://scripts/systems/net_serialize.gd")
+const WeaponVisual = preload("res://scripts/systems/weapon_visual.gd")
 
 var fails = []
 var checks = 0
@@ -87,11 +88,12 @@ func _check_weapons_maps() -> void:
 
 ## 2b) 每把武器必须有 visual，且 shape 必须匹配其 type 的已知枚举
 func _check_weapon_visuals() -> void:
-	var known = {
-		"projectile": ["dart", "bolt", "arrow", "feather", "sword", "thunder", "talisman_shot"],
-		"aura": ["vine", "tower", "landscape", "talisman", "default"],
-		"orbit": ["page", "crescent", "hammer", "beast", "treasure", "sword_array"],
-	}
+	# 武器特效约定（2026-08-16）：每把武器必须有专属、被支持的 visual.shape，
+	# 且 shape 全局唯一（禁止多武器共用兜底形状）；type 必须与渲染分支类别一致。
+	var supported = {}   # shape -> category
+	for e in WeaponVisual.shape_list():
+		supported[e[0]] = e[1]
+	var seen_shapes = {}
 	for wid in DataTables.weapons.keys():
 		var w = DataTables.weapons[wid]
 		var t = str(w.get("type", ""))
@@ -99,8 +101,15 @@ func _check_weapon_visuals() -> void:
 		_ok(typeof(vis) == TYPE_DICTIONARY and vis.size() > 0,
 			"武器 %s 缺少 visual 字段" % wid)
 		var shape = str(vis.get("shape", ""))
-		_ok(known.has(t) and known[t].has(shape),
-			"武器 %s 的 visual.shape=%s 与 type=%s 不匹配" % [wid, shape, t])
+		_ok(shape != "", "武器 %s 的 visual.shape 不能为空" % wid)
+		_ok(supported.has(shape),
+			"武器 %s 的 visual.shape=%s 未被 WeaponVisual 支持（需新增专属分支）" % [wid, shape])
+		if supported.has(shape):
+			_ok(supported[shape] == t,
+				"武器 %s 的 visual.shape=%s 属 %s 类，但 type=%s（类别不一致）" % [wid, shape, supported[shape], t])
+		_ok(not seen_shapes.has(shape),
+			"武器 %s 的 visual.shape=%s 与 %s 重复（每把武器必须有独立特效）" % [wid, shape, seen_shapes.get(shape, "")])
+		seen_shapes[shape] = wid
 		# 颜色存在且为 3 元素数组（缺失会用兜底色，但数据应完整）
 		for ck in ["color", "color2"]:
 			if vis.has(ck):
