@@ -16,5 +16,13 @@
   "em_hp":   { "id": "em_hp",   "name": "不朽血脉(绿宝石)", "desc": "每级 +40 初始生命上限（绿宝石）", "stat": "max_hp",   "per_level": 40,   "max_level": 5, "cost_base": 2, "cost_growth": 1.5, "currency": "emerald" },
   "em_dmg":  { "id": "em_dmg",  "name": "神力觉醒(绿宝石)", "desc": "每级 +6% 伤害（绿宝石）",       "stat": "damage",   "per_level": 0.06, "max_level": 5, "cost_base": 2, "cost_growth": 1.5, "currency": "emerald" },
   "em_cdr":  { "id": "em_cdr",  "name": "时之沙(绿宝石)",   "desc": "每级 +3% 冷却缩减（绿宝石）",    "stat": "cooldown", "per_level": 0.03, "max_level": 5, "cost_base": 2, "cost_growth": 1.5, "currency": "emerald" },
-  "em_crit": { "id": "em_crit", "name": "致命凝视(绿宝石)", "desc": "每级 +8% 暴击伤害（绿宝石）",   "stat": "crit_dmg", "per_level": 0.08, "max_level": 5, "cost_base": 3, "cost_growth": 1.6, "currency": "emerald" }
+  "em_crit": { "id": "em_crit", "name": "致命凝视(绿宝石)", "desc": "每级 +8% 暴击伤害（绿宝石）",   "stat": "crit_dmg", "per_level": 0.08, "max_level": 5, "cost_base": 3, "cost_growth": 1.6, "currency": "emerald" },
+
+  "spec_warrior":      { "id": "spec_warrior",      "name": "战士专精",     "stat": "class_spec", "class": "warrior",      "desc": "每级 伤害+4% 生命+18",        "spec_per_level": {"damage": 0.04, "max_hp": 18}, "max_level": 5, "cost_base": 80, "cost_growth": 1.5 },
+  "spec_archer":       { "id": "spec_archer",       "name": "箭手专精",     "stat": "class_spec", "class": "archer",       "desc": "每级 伤害+3% 暴击+2% 移速+4",   "spec_per_level": {"damage": 0.03, "crit": 0.02, "speed": 4}, "max_level": 5, "cost_base": 80, "cost_growth": 1.5 },
+  "spec_guardian":     { "id": "spec_guardian",     "name": "盾卫专精",     "stat": "class_spec", "class": "guardian",     "desc": "每级 护甲+1 生命+22 冷却+1%",   "spec_per_level": {"armor": 1, "max_hp": 22, "cooldown": 0.01}, "max_level": 5, "cost_base": 80, "cost_growth": 1.5 },
+  "spec_element_mage": { "id": "spec_element_mage", "name": "元素法师专精", "stat": "class_spec", "class": "element_mage", "desc": "每级 伤害+5% 冷却+1% 幸运+2",   "spec_per_level": {"damage": 0.05, "cooldown": 0.01, "luck": 0.02}, "max_level": 5, "cost_base": 80, "cost_growth": 1.5 },
+  "spec_summoner":     { "id": "spec_summoner",     "name": "召唤师专精",   "stat": "class_spec", "class": "summoner",     "desc": "每级 伤害+4% 冷却+1% 拾取+6",   "spec_per_level": {"damage": 0.04, "cooldown": 0.01, "pickup": 6}, "max_level": 5, "cost_base": 80, "cost_growth": 1.5 },
+  "spec_healer":       { "id": "spec_healer",       "name": "治愈师专精",   "stat": "class_spec", "class": "healer",       "desc": "每级 生命+20 冷却+1% 吸血+1%",   "spec_per_level": {"max_hp": 20, "cooldown": 0.01, "lifesteal": 0.01}, "max_level": 5, "cost_base": 80, "cost_growth": 1.5 },
+  "shield_pen": { "id": "shield_pen", "name": "破盾", "desc": "每级 +3% 护盾穿透", "stat": "shield_pen", "per_level": 0.03, "max_level": 8, "cost_base": 70, "cost_growth": 1.5 }
 }

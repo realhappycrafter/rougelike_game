@@ -14,6 +14,8 @@ var maps = {}
 var meta_upgrades = {}
 var modes = {}
 var shop_items = {}
+var mutations = {}
+var monster_affixes = {}
 
 func _ready():
 	_load_all()
@@ -31,6 +33,8 @@ func _load_all():
 	meta_upgrades = _load_json("res://data/meta_upgrades.json")
 	modes = _load_json("res://data/modes.json")
 	shop_items = _load_json("res://data/shop_items.json")
+	mutations = _load_json("res://data/mutations.json")
+	monster_affixes = _load_json("res://data/monster_affixes.json")
 
 func _load_json(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):

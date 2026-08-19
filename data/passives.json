@@ -8,5 +8,6 @@
   "luck":   { "id": "luck",   "name": "幸运护符", "stat": "luck",     "per_level": 5,    "max_level": 5, "desc": "+5 幸运（提升高品质词条概率）" },
   "crit":      { "id": "crit",      "name": "致命焦点", "stat": "crit",       "per_level": 0.05, "max_level": 5, "desc": "+5% 暴击率" },
   "crit_dmg":  { "id": "crit_dmg",  "name": "残暴印记", "stat": "crit_damage","per_level": 0.25, "max_level": 5, "desc": "+25% 暴击伤害" },
-  "lifesteal": { "id": "lifesteal", "name": "吸血之牙", "stat": "lifesteal",  "per_level": 0.02, "max_level": 5, "desc": "+2% 吸血" }
+  "lifesteal": { "id": "lifesteal", "name": "吸血之牙", "stat": "lifesteal",  "per_level": 0.02, "max_level": 5, "desc": "+2% 吸血" },
+  "shield_pen": { "id": "shield_pen", "name": "破盾符", "stat": "shield_pen", "per_level": 0.05, "max_level": 5, "desc": "+5% 护盾穿透" }
 }

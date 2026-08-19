@@ -29,3 +29,6 @@ tools/relay/_t.wasm
 # ===== 操作系统垃圾 =====
 .DS_Store
 Thumbs.db
+
+# 临时贴图导出（tests/dump_creatures 生成，非源码）
+creature_dump/

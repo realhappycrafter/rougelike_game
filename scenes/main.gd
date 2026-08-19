@@ -17,6 +17,7 @@ const SPAWN_MAX = 1200.0
 const PlayerScript     = preload("res://scripts/entities/player.gd")
 const GemScript        = preload("res://scripts/entities/gem.gd")
 const ProjectileScript = preload("res://scripts/entities/projectile.gd")
+const EnemyProjectileScript = preload("res://scripts/entities/enemy_projectile.gd")
 const ChestScript      = preload("res://scripts/entities/chest.gd")
 const UIScript         = preload("res://scripts/ui.gd")
 const BGFloorScript    = preload("res://scripts/systems/bg_floor.gd")
@@ -41,6 +42,7 @@ var _net_over = false        # 联机对局是否已结束（host 广播 gameove
 var _game_started = false    # 是否已真正开局（选完模式后才置 true，用于 N 键与重复开局防护）
 
 var projectile_pool = []
+var enemy_projectile_pool = []   # 敌弹对象池（远程怪弹幕）
 var gem_pool = []
 var chest_pool = []
 const CHEST_MAX = 20       # 同屏宝箱存在上限（超出回收最旧）
@@ -94,6 +96,183 @@ func _cli_god() -> bool:
 			return true
 	return false
 
+## 无头自动开局（职业系统校验用）：命令行 `--class=<id>` 时跳过菜单直接进入单人局
+func _cli_class() -> String:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--class="):
+			var id = a.substr(8)
+			if DataTables.characters.has(id):
+				return id
+			push_warning("[main] 命令行职业 id 不存在：" + id)
+	return ""
+
+## 无头运行校验开关：命令行 `--selftest` 时，开局后自动跑职业系统断言并退出（CI 用）
+func _cli_selftest() -> bool:
+	for a in OS.get_cmdline_user_args():
+		if a == "--selftest":
+			return true
+	return false
+
+## 无头职业系统断言：覆盖 projectile/orbit/aura 三类新 shape 的 fire 路径、
+## 治愈师光环 heal_self、盾卫 guard 减伤、专属武器 on_level_up 与升级池职业过滤。
+## 无头不跑 _draw（绘制正确性需人工核对）；本函数只防运行期 SCRIPT ERROR 与逻辑错误。
+func _headless_selftest() -> void:
+	var cid = GameManager.player_class
+	var p = GameManager.player
+	if p == null:
+		printerr("[selftest] 职业 %s 未生成玩家" % cid)
+		get_tree().quit(1)
+		return
+	print("[selftest] 职业 %s 开局成功，专属武器=%s" % [cid, p.class_weapon])
+
+	# 放几个敌人供武器命中（覆盖 projectile 命中 / aura / orbit 结算）
+	for k in range(6):
+		EnemyManager.spawn("normal", p.global_position + Vector2(randf() * 240.0 - 120.0, randf() * 240.0 - 120.0), 1.0)
+	print("[selftest] spawn ok")
+
+	# 升级专属武器若干次：exercise on_level_up / orbit 重建 / 强化词条数值
+	var wid = p.class_weapon if p.class_weapon != "" else "knife"
+	for i in range(6):
+		p.apply_upgrade({"type": "weapon", "id": wid})
+		await get_tree().process_frame
+	print("[selftest] upgrade ok")
+
+	# 持续开火 ~3 秒：武器 fire + 治愈师治疗 + 盾卫减伤路径
+	print("[selftest] before timer")
+	for i in range(180):
+		await get_tree().process_frame
+	print("[selftest] after timer")
+
+	# 减伤路径（盾卫 guard / 通用护甲）
+	if cid == "guardian":
+		p.god_mode = false
+		var hp0 = p.hp
+		var eg = p.effective_guard()
+		p.take_damage(80.0)
+		var dropped = hp0 - p.hp
+		if dropped >= 80.0:
+			printerr("[selftest] %s 盾卫减伤未生效 guard=%.3f 实扣=%.1f" % [cid, eg, dropped])
+			get_tree().quit(1)
+			return
+		print("[selftest] %s 减伤生效 guard=%.3f 实扣=%.1f" % [cid, eg, dropped])
+	elif cid == "healer":
+		# 先受伤，再以「受伤后」血量为基准；等待期间重新开启免伤以隔离敌人干扰（治疗不受 god 影响）
+		p.god_mode = false
+		p.take_damage(40.0)
+		var hp_low = p.hp
+		p.god_mode = true
+		await get_tree().create_timer(3.0).timeout
+		if p.hp <= hp_low:
+			printerr("[selftest] %s 治愈师光环未回血 hp_low=%f hp=%f" % [cid, hp_low, p.hp])
+			get_tree().quit(1)
+			return
+		print("[selftest] %s 治愈师回血 %f -> %f" % [cid, hp_low, p.hp])
+
+	# 三选一职业过滤：生成选项不应含其他职业武器（default 不限）
+	if cid != "default":
+		print("[selftest] before pool")
+		var opts = UpgradePool.generate(p)
+		for o in opts:
+			if str(o.get("type", "")) == "weapon":
+				var oc = str(DataTables.weapons.get(str(o.get("id", "")), {}).get("class", ""))
+				if oc != "" and oc != cid:
+					printerr("[selftest] %s 三选一出现其他职业武器 %s" % [cid, str(o.get("id", ""))])
+					get_tree().quit(1)
+					return
+		print("[selftest] after pool")
+
+	# ---- 新机制断言：护盾穿透 / 远程开火 / 自爆（不依赖职业，所有 --class 都跑）----
+	# 临时免伤，隔离机制验证与玩家存活/对局结束的耦合（信号与结算仍正常触发）
+	p.god_mode = true
+
+	# 1) 护盾穿透拆分：pen=0 全打盾；pen=0.8 的 80% 直接打血、其余扣盾；pen=1 无视盾
+	var suid = EnemyManager.spawn("shielded", p.global_position + Vector2(120, 0), 1.0)
+	var se = EnemyManager.get_enemy(suid)
+	if se.is_empty():
+		printerr("[selftest] 护盾怪 shielded 生成失败")
+		get_tree().quit(1); return
+	var shield0 = se.shield
+	var hp0 = se.hp
+	EnemyManager.take_damage(suid, 10.0, Vector2.ZERO, 0.0, null, 0.0)
+	se = EnemyManager.get_enemy(suid)
+	if not (abs(se.shield - (shield0 - 10.0)) < 0.01) or not (abs(se.hp - hp0) < 0.01):
+		printerr("[selftest] 护盾穿透(pen=0) 错误：盾=%f(期望%f) 血=%f(期望%f)" % [se.shield, shield0 - 10.0, se.hp, hp0])
+		get_tree().quit(1); return
+	EnemyManager.take_damage(suid, 10.0, Vector2.ZERO, 0.0, null, 0.8)
+	se = EnemyManager.get_enemy(suid)
+	if not (abs(se.hp - (hp0 - 8.0)) < 0.01) or not (abs(se.shield - (shield0 - 12.0)) < 0.01):
+		printerr("[selftest] 护盾穿透(pen=0.8) 错误：血=%f(期望%f) 盾=%f(期望%f)" % [se.hp, hp0 - 8.0, se.shield, shield0 - 12.0])
+		get_tree().quit(1); return
+	EnemyManager.take_damage(suid, 9999.0, Vector2.ZERO, 0.0, null, 1.0)
+	print("[selftest] 护盾穿透拆分正确（pen0 全盾 / pen0.8 血8盾2 / pen1 无视盾）")
+
+	# 2) 远程怪开火：在玩家附近放置 caster，跑若干帧应触发 enemy_fire（host 权威生成敌弹）
+	#     用 Dictionary 持有标志，规避 GDScript lambda 对局部 bool 的按值捕获问题
+	var fire_flag = {"hit": false}
+	var cb_fire = func(_a, _b, _c, _d, _e): fire_flag.hit = true
+	EnemyManager.enemy_fire.connect(cb_fire)
+	var cuid = EnemyManager.spawn("caster", p.global_position + Vector2(140, 0), 1.0)
+	for i in range(200):
+		await get_tree().process_frame
+	EnemyManager.enemy_fire.disconnect(cb_fire)
+	if not fire_flag.hit:
+		printerr("[selftest] 远程怪 caster 未触发开火（enemy_fire 未发出）")
+		get_tree().quit(1); return
+	EnemyManager.despawn_uid(cuid)
+	print("[selftest] 远程怪开火正常")
+
+	# 3) 自爆怪：贴近玩家后应引爆，触发 enemy_explode（AoE 对范围内玩家结算 + 特效）
+	var boom_flag = {"hit": false}
+	var cb_boom = func(_a, _b, _c): boom_flag.hit = true
+	EnemyManager.enemy_explode.connect(cb_boom)
+	EnemyManager.spawn("bomber", p.global_position + Vector2(40, 0), 1.0)
+	for i in range(60):
+		await get_tree().process_frame
+	EnemyManager.enemy_explode.disconnect(cb_boom)
+	if not boom_flag.hit:
+		printerr("[selftest] 自爆怪 bomber 未触发爆炸（enemy_explode 未发出）")
+		get_tree().quit(1); return
+	print("[selftest] 自爆怪引爆正常")
+
+	# ---- 词条系统断言（质变 / 超质变 / 怪物黑词条 / 商店刷新 / 三选一注入）----
+	# 1) 武器质变 -> 超质变：damage_mult 累乘；超质变需先有前置质变
+	p.apply_upgrade({"type":"affix", "affix_id":"knife_mut", "category":"weapon", "require_weapon":"knife"})
+	var wm = AffixManager.weapon_mods("knife")
+	if abs(wm.damage_mult - 1.15) > 0.01:
+		printerr("[selftest] 武器质变 damage_mult 错误：%f（期望1.15）" % wm.damage_mult)
+		get_tree().quit(1); return
+	p.apply_upgrade({"type":"affix", "affix_id":"knife_sup", "category":"weapon", "require_weapon":"knife"})
+	wm = AffixManager.weapon_mods("knife")
+	if abs(wm.damage_mult - 1.495) > 0.01:
+		printerr("[selftest] 武器超质变 damage_mult 错误：%f（期望1.495）" % wm.damage_mult)
+		get_tree().quit(1); return
+	# 2) 玩家质变：经 apply_upgrade 真实路径施加到玩家字段（ply_power_mut +15% 伤害）
+	p.apply_upgrade({"type":"affix", "affix_id":"ply_power_mut", "category":"player", "require_weapon":""})
+	if abs(p.damage_bonus - 0.15) > 0.01:
+		printerr("[selftest] 玩家质变 damage_bonus 未施加：%f（期望0.15）" % p.damage_bonus)
+		get_tree().quit(1); return
+	# 3) 怪物黑词条：聚合 monster_player_debuffs 正确（m_curse -12% 玩家伤害）
+	AffixManager.add_monster_affix("m_curse")
+	var db = AffixManager.monster_player_debuffs()
+	if abs(db.damage_mult - 0.88) > 0.01:
+		printerr("[selftest] 怪物黑词条 damage_mult 错误：%f（期望0.88）" % db.damage_mult)
+		get_tree().quit(1); return
+	AffixManager.apply_monster_debuffs(p)   # 施加削弱，验证玩家字段被改（此处应已×0.88）
+	# 4) 商店刷新：成本随刷新次数递增
+	AffixManager.rebuild_affix_stock(p)
+	var c0 = AffixManager.refresh_cost()
+	AffixManager.shop_refresh_count += 1
+	var c1 = AffixManager.refresh_cost()
+	if not (c1 > c0):
+		printerr("[selftest] 商店刷新成本未递增：%d -> %d" % [c0, c1])
+		get_tree().quit(1); return
+	# 5) 三选一注入不崩溃（含可能出现的质变/超质变）
+	var opts2 = UpgradePool.generate(p)
+	print("[selftest] 三选一生成 %d 项（含可能词条）" % opts2.size())
+
+	print("[selftest] 职业 %s 运行无致命错误" % cid)
+	get_tree().quit(0)
+
 func _ready():
 	# 选图优先级：命令行 `-- --map=<id>`（调试/无头验证） > 菜单已选 > 默认地图
 	var forced_map = _cli_map()
@@ -119,12 +298,25 @@ func _ready():
 	_build_net_panel()
 	net_panel.visible = true
 
+	# 无头自动开局：--class=<id> 时跳过菜单，直接进入单人局（用于职业系统无头校验）
+	var forced_class = _cli_class()
+	if forced_class != "":
+		GameManager.set_player_class(forced_class)
+		call_deferred("_on_choose_solo")
+		if _cli_selftest():
+			call_deferred("_headless_selftest")
+
 ## 真正开局：构建世界 / 玩家 / 敌人并启动一局。仅在玩家选定模式（单机 / 主机 / 客机）后调用，
 ## 解决「是否联机选完再开始游戏」——在此之前世界不构建、run 不启动、对局不计时。
 func _start_game() -> void:
 	if _game_started:
 		return
 	_game_started = true
+	# 一旦选定模式即收起「开始方式」联机面板：否则带黑词条三选一（普通及以上难度）
+	# 会先走 _start_affix_draft 分支，net_panel 要等三选一结束才在 _begin_run_mode 隐藏，
+	# 期间全屏 MOUSE_FILTER_STOP 的面板会盖住词条面板、卡死所有点击（表现为「联机面板未消失」）。
+	if net_panel != null:
+		net_panel.visible = false
 
 	world = Node2D.new()
 	add_child(world)
@@ -164,6 +356,11 @@ func _start_game() -> void:
 	_build_obstacles()
 	if not EnemyManager.is_connected("enemy_died", on_enemy_died):
 		EnemyManager.connect("enemy_died", on_enemy_died)
+	# 远程怪弹幕 / 自爆怪爆炸：host 端模拟，信号接到主场景做敌弹生成与 AoE 结算
+	if not EnemyManager.is_connected("enemy_fire", _on_enemy_fire):
+		EnemyManager.connect("enemy_fire", _on_enemy_fire)
+	if not EnemyManager.is_connected("enemy_explode", _on_enemy_explode):
+		EnemyManager.connect("enemy_explode", _on_enemy_explode)
 
 	# 信号连接
 	GameManager.connect("level_up_requested", _on_level_up_requested)
@@ -183,7 +380,7 @@ func _start_game() -> void:
 		init_run_phases()
 	if GameManager.difficulty_id == "extreme":
 		ui.show_perf_warning("⚠ 极端模式：敌人数量极多，低端设备可能出现卡顿")
-	player.setup_character(DataTables.characters["default"])
+	player.setup_character(DataTables.characters["default"] if not DataTables.characters.has(GameManager.player_class) else DataTables.characters[GameManager.player_class])
 	# 局外强化（meta_upgrades）叠加到基础属性
 	player.apply_meta_upgrades(SaveManager.get_meta_upgrades())
 	# 无头长时程测试：--god 免伤，覆盖 Boss/通关分支
@@ -199,12 +396,100 @@ func _start_game() -> void:
 	elif m.has("story_intro") and ui != null:
 		ui.show_story(m.get("world", ""), m.get("name", "未知界域"), m.get("story_intro", ""))
 
-	# 按模式进入（solo/host 走本地权威分支；guest 走远端渲染 —— 世界已在上面构建）
+	# 怪物黑色词条：开局前置三选一（按难度数量）。headless（含无头校验）自动选，否则弹窗交互。
+	# reset_run 清空上一局全部词条状态（质变/超质变/黑词条/商店刷新）。
+	AffixManager.reset_run()
+	var diff_id = GameManager.difficulty_id
+	var n_affix = AffixManager.monster_affix_count(diff_id)
+	if _cli_selftest():
+		n_affix = 0   # 无头断言保持确定性：不在 selftest 里随机注入黑词条
+	if n_affix > 0 and not OS.has_feature("headless"):
+		_start_affix_draft(diff_id, n_affix)
+	elif n_affix > 0:
+		_affix_autopick(diff_id, n_affix)
+		_begin_run_mode()
+	else:
+		_begin_run_mode()
+
+## ---------- 怪物黑色词条：开局前置三选一 ----------
+var _draft_options: Array = []
+var _draft_remaining: int = 0
+var _draft_free: int = 0
+var _draft_diff: String = ""
+var _draft_active: bool = false
+
+## 交互式黑色词条三选一：按难度数量逐个抽取，免费 3 次刷新后金币刷新
+func _start_affix_draft(diff_id: String, n: int) -> void:
+	_draft_options = []
+	_draft_remaining = n
+	_draft_free = 3
+	_draft_diff = diff_id
+	_draft_active = true
+	if not ui.is_connected("monster_affix_chosen", _on_monster_affix_chosen):
+		ui.connect("monster_affix_chosen", _on_monster_affix_chosen)
+	if not ui.is_connected("monster_affix_reroll", _on_monster_affix_reroll):
+		ui.connect("monster_affix_reroll", _on_monster_affix_reroll)
+	get_tree().paused = true
+	_affix_draft_next()
+
+func _affix_draft_next() -> void:
+	if _draft_remaining <= 0:
+		_finish_affix_draft()
+		return
+	var ids = AffixManager.roll_monster_choices(_draft_diff, 3)
+	_draft_options = []
+	for aid in ids:
+		var a = AffixManager.monster_affixes.get(aid, {})
+		_draft_options.append({"id": aid, "name": a.get("name", aid), "desc": a.get("desc", "")})
+	ui.show_monster_affix_draft(_draft_options, _draft_free, AffixManager.refresh_cost(), _draft_remaining)
+
+func _on_monster_affix_chosen(idx: int) -> void:
+	if idx < 0 or idx >= _draft_options.size():
+		return
+	var aid = str(_draft_options[idx].get("id", ""))
+	if aid != "":
+		AffixManager.add_monster_affix(aid)
+		_draft_remaining -= 1
+	ui.hide_monster_affix_draft()
+	_affix_draft_next()
+
+func _on_monster_affix_reroll() -> void:
+	if _draft_free > 0:
+		_draft_free -= 1
+		_affix_draft_next()
+	else:
+		var cost = AffixManager.refresh_cost()
+		if GameManager.gold >= cost:
+			GameManager.gold -= cost
+			AffixManager.shop_refresh_count += 1
+			_affix_draft_next()
+		else:
+			ui.info("金币不足，无法刷新", Color(1.0, 0.5, 0.5))
+
+func _finish_affix_draft() -> void:
+	ui.hide_monster_affix_draft()
+	get_tree().paused = false
+	if ui.is_connected("monster_affix_chosen", _on_monster_affix_chosen):
+		ui.disconnect("monster_affix_chosen", _on_monster_affix_chosen)
+	if ui.is_connected("monster_affix_reroll", _on_monster_affix_reroll):
+		ui.disconnect("monster_affix_reroll", _on_monster_affix_reroll)
+	AffixManager.apply_monster_debuffs(player)
+	_draft_active = false
+	_begin_run_mode()
+
+## headless 自动选：直接抽取 n 个黑词条并施加削弱（无头校验/长时程用）
+func _affix_autopick(diff_id: String, n: int) -> void:
+	var choices = AffixManager.roll_monster_choices(diff_id, n)
+	for a in choices:
+		AffixManager.add_monster_affix(a)
+	AffixManager.apply_monster_debuffs(player)
+
+## 进入对局模式（原 _start_game 末段：按 solo/host/guest 分支启动，隐藏联机面板）
+func _begin_run_mode() -> void:
 	if GameManager.net_mode == GameManager.NetMode.GUEST:
 		_enter_guest_mode()
 	else:
 		_enter_host_mode()
-
 	if net_panel != null:
 		net_panel.visible = false
 	_on_hud_changed()
@@ -568,10 +853,10 @@ func _update_chests(delta: float) -> void:
 	# 清理已过期 / 被回收的空引用（chest 自行 queue_free 后需移除）
 	active_chests = active_chests.filter(func(c): return is_instance_valid(c))
 
-## 宝箱开启回调：弹信息框
-func on_chest_opened(desc: String) -> void:
+## 宝箱开启回调：弹信息框（col 为本次奖励品质色，由 chest.gd 按奖励等级传入）
+func on_chest_opened(desc: String, col: Color = Color(1.0, 0.85, 0.4)) -> void:
 	if ui != null:
-		ui.info("宝箱开启获得了 " + desc, Color(1.0, 0.85, 0.4))
+		ui.info("宝箱开启获得了 " + desc, col)
 
 ## ---- 掉落物 / 弹道 池 ----
 func spawn_gem(pos, type, value):
@@ -605,6 +890,42 @@ func get_projectile():
 
 func return_projectile(p) -> void:
 	projectile_pool.append(p)
+
+## 敌弹对象池（远程怪弹幕）：与玩家弹体同款复用模式
+func get_enemy_projectile():
+	var p
+	if enemy_projectile_pool.is_empty():
+		p = Area2D.new()
+		p.set_script(EnemyProjectileScript)
+		world.add_child(p)
+	else:
+		p = enemy_projectile_pool.pop_back()
+		if p.get_parent() == null:
+			world.add_child(p)
+		p.visible = true
+	return p
+
+func return_enemy_projectile(p) -> void:
+	enemy_projectile_pool.append(p)
+
+## 远程怪开火：host 收到 EnemyManager.enemy_fire 信号后生成敌弹（仅 host 端发射，
+## 与敌人接触伤害同源：host 权威，伤害统一应用到全部 combat_players 含客机代理）。
+func _on_enemy_fire(epos: Vector2, edir: Vector2, espeed: float, edmg: float, ecol: Color) -> void:
+	if GameManager.net_mode == GameManager.NetMode.GUEST:
+		return
+	var p = get_enemy_projectile()
+	if p != null:
+		p.launch(epos, edir, espeed, edmg, ecol, self)
+
+## 自爆怪 / 爆炸 AoE：对范围内所有玩家结算伤害，并写入 EnemyManager.explosions
+## 供 draw_enemies 画扩散光环（0.35s 衰减）。host 端触发（enemy_explode 仅 host 发出）。
+func _on_enemy_explode(epos: Vector2, eradius: float, edmg: float) -> void:
+	for pl in GameManager.get_players_for_combat():
+		if not is_instance_valid(pl):
+			continue
+		if epos.distance_to(pl.global_position) <= eradius + pl.body_radius:
+			pl.take_damage(edmg)
+	EnemyManager.explosions.append({"pos": epos, "r": eradius, "t": 0.0})
 
 ## ---- 升级三选一（共享 build：host 权威，应用到本人与所有代理）----
 func _on_level_up_requested(options: Array) -> void:
@@ -1013,7 +1334,7 @@ func _spawn_remote_player(pid: int) -> void:
 	rp.set_script(PlayerScript)
 	rp.main = self
 	rp.global_position = player.global_position + Vector2(randf() * 200.0 - 100.0, randf() * 200.0 - 100.0)
-	rp.setup_character(DataTables.characters["default"])
+	rp.setup_character(DataTables.characters["default"] if not DataTables.characters.has(GameManager.player_class) else DataTables.characters[GameManager.player_class])
 	rp.net_controlled = true
 	rp.pid = pid
 	rp.net_color = _pid_color(pid)

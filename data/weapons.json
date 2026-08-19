@@ -1,157 +1,1087 @@
 {
   "knife": {
-    "id": "knife", "name": "飞刀", "type": "projectile",
-    "damage": 10, "cooldown": 0.5, "count": 1, "projectile_speed": 430,
-    "pierce": 0, "area": 1.0, "knockback": 30, "duration": 0,
-    "max_level": 8, "evolution": "infinite_knife",
+    "id": "knife",
+    "name": "飞刀",
+    "type": "projectile",
+    "damage": 10,
+    "cooldown": 0.5,
+    "count": 1,
+    "projectile_speed": 430,
+    "pierce": 0,
+    "area": 1.0,
+    "knockback": 30,
+    "duration": 0,
+    "max_level": 8,
+    "evolution": "infinite_knife",
     "desc": "自动射向最近的敌人",
-    "visual": {"shape": "dart", "color": [0.85,0.88,0.92], "color2": [1.0,1.0,1.0], "fx": {"trail": true, "glow": 0.3}},
-    "level_desc": ["连发次数 +1", "伤害 +5", "穿透 +1", "弹速 +60", "再连发 +1", "伤害 +8", "进化：无限飞刀"]
+    "visual": {
+      "shape": "dart",
+      "color": [
+        0.85,
+        0.88,
+        0.92
+      ],
+      "color2": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "fx": {
+        "trail": true,
+        "glow": 0.3
+      }
+    },
+    "level_desc": [
+      "连发次数 +1",
+      "伤害 +5",
+      "穿透 +1",
+      "弹速 +60",
+      "再连发 +1",
+      "伤害 +8",
+      "进化：无限飞刀"
+    ],
+    "slot": "main"
   },
   "magic_wand": {
-    "id": "magic_wand", "name": "魔杖", "type": "projectile",
-    "damage": 8, "cooldown": 1.1, "count": 1, "projectile_speed": 520,
-    "pierce": 1, "area": 1.0, "knockback": 20, "duration": 0,
-    "max_level": 8, "evolution": "",
+    "id": "magic_wand",
+    "name": "魔杖",
+    "type": "projectile",
+    "damage": 8,
+    "cooldown": 1.1,
+    "count": 1,
+    "projectile_speed": 520,
+    "pierce": 1,
+    "area": 1.0,
+    "knockback": 20,
+    "duration": 0,
+    "max_level": 8,
+    "evolution": "",
     "desc": "蓄力发射穿透魔法弹",
-    "visual": {"shape": "bolt", "color": [0.6,0.4,1.0], "color2": [0.9,0.8,1.0], "fx": {"glow": 0.5, "particles": "spark"}},
-    "level_desc": ["伤害 +4", "穿透 +1", "蓄力更快", "连发 +1", "伤害 +6", "穿透 +1", "终极魔法弹"]
+    "visual": {
+      "shape": "bolt",
+      "color": [
+        0.6,
+        0.4,
+        1.0
+      ],
+      "color2": [
+        0.9,
+        0.8,
+        1.0
+      ],
+      "fx": {
+        "glow": 0.5,
+        "particles": "spark"
+      }
+    },
+    "level_desc": [
+      "伤害 +4",
+      "穿透 +1",
+      "蓄力更快",
+      "连发 +1",
+      "伤害 +6",
+      "穿透 +1",
+      "终极魔法弹"
+    ],
+    "slot": "off"
   },
   "garlic": {
-    "id": "garlic", "name": "大蒜", "type": "aura",
-    "damage": 3, "cooldown": 0.4, "count": 1, "projectile_speed": 0,
-    "pierce": 0, "area": 1.0, "knockback": 0, "duration": 0,
-    "max_level": 8, "evolution": "",
+    "id": "garlic",
+    "name": "大蒜",
+    "type": "aura",
+    "damage": 3,
+    "cooldown": 0.4,
+    "count": 1,
+    "projectile_speed": 0,
+    "pierce": 0,
+    "area": 1.0,
+    "knockback": 0,
+    "duration": 0,
+    "max_level": 8,
+    "evolution": "",
     "desc": "身边持续灼伤靠近的敌人",
-    "visual": {"shape": "poison", "color": [0.30,0.85,0.35], "color2": [0.6,1.0,0.5], "fx": {"glow": 0.2, "particles": "bubble", "pulse": 0.4}},
-    "level_desc": ["灼伤伤害 +2", "范围 +0.3", "持续更久", "伤害 +3", "范围 +0.5", "灼烧加深", "焚尽领域"]
+    "visual": {
+      "shape": "poison",
+      "color": [
+        0.3,
+        0.85,
+        0.35
+      ],
+      "color2": [
+        0.6,
+        1.0,
+        0.5
+      ],
+      "fx": {
+        "glow": 0.2,
+        "particles": "bubble",
+        "pulse": 0.4
+      }
+    },
+    "level_desc": [
+      "灼伤伤害 +2",
+      "范围 +0.3",
+      "持续更久",
+      "伤害 +3",
+      "范围 +0.5",
+      "灼烧加深",
+      "焚尽领域"
+    ],
+    "slot": "aura"
   },
   "bible": {
-    "id": "bible", "name": "圣经", "type": "orbit",
-    "damage": 7, "cooldown": 1.0, "count": 2, "projectile_speed": 0,
-    "pierce": 0, "area": 1.0, "knockback": 10, "duration": 0,
-    "max_level": 8, "evolution": "",
+    "id": "bible",
+    "name": "圣经",
+    "type": "orbit",
+    "damage": 13,
+    "cooldown": 1.0,
+    "count": 2,
+    "projectile_speed": 0,
+    "pierce": 0,
+    "area": 1.0,
+    "knockback": 10,
+    "duration": 0,
+    "max_level": 8,
+    "evolution": "",
     "desc": "环绕旋转的书页持续切割",
-    "visual": {"shape": "page", "color": [0.35,0.7,1.0], "color2": [0.8,0.92,1.0], "fx": {"glow": 0.4}},
-    "level_desc": ["书页 +1", "旋转伤害 +3", "转速提升", "书页 +1", "伤害 +5", "范围扩大", "神圣书阵"]
+    "visual": {
+      "shape": "page",
+      "color": [
+        0.35,
+        0.7,
+        1.0
+      ],
+      "color2": [
+        0.8,
+        0.92,
+        1.0
+      ],
+      "fx": {
+        "glow": 0.4
+      }
+    },
+    "level_desc": [
+      "书页 +1",
+      "旋转伤害 +3",
+      "转速提升",
+      "书页 +1",
+      "伤害 +5",
+      "范围扩大",
+      "神圣书阵"
+    ],
+    "slot": "orbit"
   },
   "whip": {
-    "id": "whip", "name": "鞭子", "type": "orbit",
-    "damage": 15, "cooldown": 1.0, "count": 1, "projectile_speed": 0,
-    "pierce": 1, "area": 1.5, "knockback": 60, "duration": 0,
-    "max_level": 8, "evolution": "holy_whip",
+    "id": "whip",
+    "name": "鞭子",
+    "type": "sweep",
+    "damage": 15,
+    "cooldown": 1.0,
+    "count": 1,
+    "projectile_speed": 0,
+    "pierce": 1,
+    "area": 1.5,
+    "knockback": 60,
+    "duration": 0,
+    "max_level": 8,
+    "evolution": "holy_whip",
     "desc": "近身横扫，高击退",
-    "visual": {"shape": "crescent", "color": [1.0,0.45,0.3], "color2": [1.0,0.7,0.4], "fx": {"trail": true, "glow": 0.4}},
-    "level_desc": ["伤害 +6", "横扫范围 +0.4", "击退 +20", "伤害 +10", "范围 +0.6", "击退 +30", "进化：神圣之鞭"]
+    "visual": {
+      "shape": "crescent",
+      "color": [
+        1.0,
+        0.45,
+        0.3
+      ],
+      "color2": [
+        1.0,
+        0.7,
+        0.4
+      ],
+      "fx": {
+        "trail": true,
+        "glow": 0.4
+      }
+    },
+    "level_desc": [
+      "伤害 +6",
+      "横扫范围 +0.4",
+      "击退 +20",
+      "伤害 +10",
+      "范围 +0.6",
+      "击退 +30",
+      "进化：神圣之鞭"
+    ],
+    "slot": "main"
   },
-
   "dlu_bluesilver": {
-    "id": "dlu_bluesilver", "name": "蓝银草", "type": "aura", "maps": ["douluo"],
-    "damage": 4, "cooldown": 0.4, "count": 1, "projectile_speed": 0,
-    "pierce": 0, "area": 1.0, "knockback": 0, "duration": 0,
-    "max_level": 8, "evolution": "",
-    "desc": "蓝银缠绕，持续束缚灼伤靠近的敌人",
-    "visual": {"shape": "vine", "color": [0.2,0.7,0.35], "color2": [0.5,0.95,0.5], "fx": {"glow": 0.2, "particles": "leaf"}},
-    "level_desc": ["灼伤 +2", "范围 +0.3", "持续更久", "伤害 +3", "范围 +0.5", "缠缚加深", "蓝银领域"]
+    "id": "dlu_bluesilver",
+    "name": "青纹藤",
+    "type": "aura",
+    "maps": [
+      "douluo"
+    ],
+    "damage": 4,
+    "cooldown": 0.4,
+    "count": 1,
+    "projectile_speed": 0,
+    "pierce": 0,
+    "area": 1.0,
+    "knockback": 0,
+    "duration": 0,
+    "max_level": 8,
+    "evolution": "",
+    "desc": "青纹缠绕，持续束缚灼伤靠近的敌人",
+    "visual": {
+      "shape": "vine",
+      "color": [
+        0.2,
+        0.7,
+        0.35
+      ],
+      "color2": [
+        0.5,
+        0.95,
+        0.5
+      ],
+      "fx": {
+        "glow": 0.2,
+        "particles": "leaf"
+      }
+    },
+    "level_desc": [
+      "灼伤 +2",
+      "范围 +0.3",
+      "持续更久",
+      "伤害 +3",
+      "范围 +0.5",
+      "缠缚加深",
+      "青纹领域"
+    ],
+    "slot": "aura"
   },
   "dlu_hammer": {
-    "id": "dlu_hammer", "name": "昊天锤", "type": "orbit", "maps": ["douluo"],
-    "damage": 18, "cooldown": 1.0, "count": 1, "projectile_speed": 0,
-    "pierce": 1, "area": 1.6, "knockback": 70, "duration": 0,
-    "max_level": 8, "evolution": "holy_hammer",
-    "desc": "昊天锤：近身重击，巨力击退",
-    "visual": {"shape": "hammer", "color": [0.6,0.4,0.25], "color2": [0.9,0.7,0.4], "fx": {"glow": 0.5, "particles": "spark"}},
-    "level_desc": ["伤害 +7", "横扫范围 +0.4", "击退 +25", "伤害 +11", "范围 +0.6", "击退 +35", "进化：神锤裂地"]
+    "id": "dlu_hammer",
+    "name": "裂地锤",
+    "type": "sweep",
+    "maps": [
+      "douluo"
+    ],
+    "damage": 18,
+    "cooldown": 1.0,
+    "count": 1,
+    "projectile_speed": 0,
+    "pierce": 1,
+    "area": 1.6,
+    "knockback": 70,
+    "duration": 0,
+    "max_level": 8,
+    "evolution": "holy_hammer",
+    "desc": "裂地锤：近身重击，巨力击退",
+    "visual": {
+      "shape": "hammer",
+      "color": [
+        0.6,
+        0.4,
+        0.25
+      ],
+      "color2": [
+        0.9,
+        0.7,
+        0.4
+      ],
+      "fx": {
+        "glow": 0.5,
+        "particles": "spark"
+      }
+    },
+    "level_desc": [
+      "伤害 +7",
+      "横扫范围 +0.4",
+      "击退 +25",
+      "伤害 +11",
+      "范围 +0.6",
+      "击退 +35",
+      "进化：神锤裂地"
+    ],
+    "slot": "main"
   },
   "dlu_tower": {
-    "id": "dlu_tower", "name": "七宝琉璃塔", "type": "aura", "maps": ["douluo"],
-    "damage": 2, "cooldown": 1.2, "count": 1, "projectile_speed": 0,
-    "pierce": 0, "area": 1.3, "knockback": 0, "duration": 0,
-    "max_level": 8, "evolution": "",
+    "id": "dlu_tower",
+    "name": "灵光宝塔",
+    "type": "aura",
+    "maps": [
+      "douluo"
+    ],
+    "damage": 2,
+    "cooldown": 1.2,
+    "count": 1,
+    "projectile_speed": 0,
+    "pierce": 0,
+    "area": 1.3,
+    "knockback": 0,
+    "duration": 0,
+    "max_level": 8,
+    "evolution": "",
     "desc": "琉璃光环：范围真光灼烧",
-    "visual": {"shape": "tower", "color": [0.95,0.8,0.3], "color2": [1.0,0.95,0.6], "fx": {"glow": 0.4, "particles": "mote", "pulse": 0.3}},
-    "level_desc": ["光焰 +1", "范围 +0.3", "持续更久", "伤害 +2", "范围 +0.4", "光耀加深", "琉璃净世"]
+    "visual": {
+      "shape": "tower",
+      "color": [
+        0.95,
+        0.8,
+        0.3
+      ],
+      "color2": [
+        1.0,
+        0.95,
+        0.6
+      ],
+      "fx": {
+        "glow": 0.4,
+        "particles": "mote",
+        "pulse": 0.3
+      }
+    },
+    "level_desc": [
+      "光焰 +1",
+      "范围 +0.3",
+      "持续更久",
+      "伤害 +2",
+      "范围 +0.4",
+      "光耀加深",
+      "琉璃净世"
+    ],
+    "slot": "aura"
   },
   "dlu_phoenix": {
-    "id": "dlu_phoenix", "name": "凤凰火线", "type": "projectile", "maps": ["douluo"],
-    "damage": 12, "cooldown": 0.7, "count": 1, "projectile_speed": 480,
-    "pierce": 1, "area": 1.0, "knockback": 20, "duration": 0,
-    "max_level": 8, "evolution": "",
-    "desc": "凤凰火线：灼烧弹道",
-    "visual": {"shape": "feather", "color": [1.0,0.5,0.1], "color2": [1.0,0.9,0.4], "fx": {"trail": true, "glow": 0.5, "particles": "ember"}},
-    "level_desc": ["伤害 +5", "弹速 +40", "穿透 +1", "连发 +1", "伤害 +7", "穿透 +1", "涅槃火羽"]
+    "id": "dlu_phoenix",
+    "name": "炽羽火线",
+    "type": "projectile",
+    "maps": [
+      "douluo"
+    ],
+    "damage": 12,
+    "cooldown": 0.7,
+    "count": 1,
+    "projectile_speed": 480,
+    "pierce": 1,
+    "area": 1.0,
+    "knockback": 20,
+    "duration": 0,
+    "max_level": 8,
+    "evolution": "",
+    "desc": "炽羽火线：灼烧弹道",
+    "visual": {
+      "shape": "feather",
+      "color": [
+        1.0,
+        0.5,
+        0.1
+      ],
+      "color2": [
+        1.0,
+        0.9,
+        0.4
+      ],
+      "fx": {
+        "trail": true,
+        "glow": 0.5,
+        "particles": "ember"
+      }
+    },
+    "level_desc": [
+      "伤害 +5",
+      "弹速 +40",
+      "穿透 +1",
+      "连发 +1",
+      "伤害 +7",
+      "穿透 +1",
+      "涅槃火羽"
+    ],
+    "slot": "off"
   },
   "dlu_crossbow": {
-    "id": "dlu_crossbow", "name": "诸葛神弩", "type": "projectile", "maps": ["douluo"],
-    "damage": 9, "cooldown": 0.5, "count": 2, "projectile_speed": 560,
-    "pierce": 2, "area": 1.0, "knockback": 10, "duration": 0,
-    "max_level": 8, "evolution": "",
+    "id": "dlu_crossbow",
+    "name": "连珠弩",
+    "type": "projectile",
+    "maps": [
+      "douluo"
+    ],
+    "damage": 9,
+    "cooldown": 0.5,
+    "count": 2,
+    "projectile_speed": 560,
+    "pierce": 2,
+    "area": 1.0,
+    "knockback": 10,
+    "duration": 0,
+    "max_level": 8,
+    "evolution": "",
     "desc": "连弩：多发穿透",
-    "visual": {"shape": "arrow", "color": [0.7,0.55,0.35], "color2": [0.95,0.85,0.6], "fx": {"glow": 0.2}},
-    "level_desc": ["伤害 +4", "连发 +1", "弹速 +40", "穿透 +1", "伤害 +6", "连发 +1", "千机弩阵"]
+    "visual": {
+      "shape": "arrow",
+      "color": [
+        0.7,
+        0.55,
+        0.35
+      ],
+      "color2": [
+        0.95,
+        0.85,
+        0.6
+      ],
+      "fx": {
+        "glow": 0.2
+      }
+    },
+    "level_desc": [
+      "伤害 +4",
+      "连发 +1",
+      "弹速 +40",
+      "穿透 +1",
+      "伤害 +6",
+      "连发 +1",
+      "千机弩阵"
+    ],
+    "slot": "off"
   },
   "dlu_rabbit": {
-    "id": "dlu_rabbit", "name": "柔骨兔", "type": "orbit", "maps": ["douluo"],
-    "damage": 10, "cooldown": 0.9, "count": 2, "projectile_speed": 0,
-    "pierce": 0, "area": 1.2, "knockback": 30, "duration": 0,
-    "max_level": 8, "evolution": "",
+    "id": "dlu_rabbit",
+    "name": "月影兔",
+    "type": "orbit",
+    "maps": [
+      "douluo"
+    ],
+    "damage": 17,
+    "cooldown": 0.9,
+    "count": 2,
+    "projectile_speed": 0,
+    "pierce": 0,
+    "area": 1.2,
+    "knockback": 30,
+    "duration": 0,
+    "max_level": 8,
+    "evolution": "",
     "desc": "柔骨连环踢：环绕连击",
-    "visual": {"shape": "beast", "color": [0.95,0.95,0.98], "color2": [0.7,0.8,1.0], "fx": {"glow": 0.3}},
-    "level_desc": ["伤害 +4", "踢击 +1", "范围 +0.3", "伤害 +6", "踢击 +1", "范围 +0.4", "无敌兔腿"]
+    "visual": {
+      "shape": "beast",
+      "color": [
+        0.95,
+        0.95,
+        0.98
+      ],
+      "color2": [
+        0.7,
+        0.8,
+        1.0
+      ],
+      "fx": {
+        "glow": 0.3
+      }
+    },
+    "level_desc": [
+      "伤害 +4",
+      "踢击 +1",
+      "范围 +0.3",
+      "伤害 +6",
+      "踢击 +1",
+      "范围 +0.4",
+      "无敌兔腿"
+    ],
+    "slot": "orbit"
   },
-
   "xx_sword": {
-    "id": "xx_sword", "name": "本命飞剑", "type": "projectile", "maps": ["xiuxian"],
-    "damage": 14, "cooldown": 0.5, "count": 1, "projectile_speed": 520,
-    "pierce": 1, "area": 1.0, "knockback": 15, "duration": 0,
-    "max_level": 8, "evolution": "infinite_sword",
+    "id": "xx_sword",
+    "name": "本命飞剑",
+    "type": "projectile",
+    "maps": [
+      "xiuxian"
+    ],
+    "damage": 14,
+    "cooldown": 0.5,
+    "count": 1,
+    "projectile_speed": 520,
+    "pierce": 1,
+    "area": 1.0,
+    "knockback": 15,
+    "duration": 0,
+    "max_level": 8,
+    "evolution": "infinite_sword",
     "desc": "本命飞剑：御剑斩敌",
-    "visual": {"shape": "sword", "color": [0.8,0.9,1.0], "color2": [1.0,1.0,1.0], "fx": {"trail": true, "glow": 0.4, "particles": "spark"}},
-    "level_desc": ["伤害 +6", "剑速 +40", "穿透 +1", "连发 +1", "伤害 +8", "穿透 +1", "进化：万剑归宗"]
+    "visual": {
+      "shape": "sword",
+      "color": [
+        0.8,
+        0.9,
+        1.0
+      ],
+      "color2": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "fx": {
+        "trail": true,
+        "glow": 0.4,
+        "particles": "spark"
+      }
+    },
+    "level_desc": [
+      "伤害 +6",
+      "剑速 +40",
+      "穿透 +1",
+      "连发 +1",
+      "伤害 +8",
+      "穿透 +1",
+      "进化：万剑归宗"
+    ],
+    "slot": "main"
   },
   "xx_treasure": {
-    "id": "xx_treasure", "name": "法宝环绕", "type": "orbit", "maps": ["xiuxian"],
-    "damage": 13, "cooldown": 1.0, "count": 2, "projectile_speed": 0,
-    "pierce": 0, "area": 1.2, "knockback": 15, "duration": 0,
-    "max_level": 8, "evolution": "",
+    "id": "xx_treasure",
+    "name": "法宝环绕",
+    "type": "orbit",
+    "maps": [
+      "xiuxian"
+    ],
+    "damage": 20,
+    "cooldown": 1.0,
+    "count": 2,
+    "projectile_speed": 0,
+    "pierce": 0,
+    "area": 1.2,
+    "knockback": 15,
+    "duration": 0,
+    "max_level": 8,
+    "evolution": "",
     "desc": "法宝：环身护体斩",
-    "visual": {"shape": "treasure", "color": [0.7,0.5,1.0], "color2": [1.0,0.9,0.5], "fx": {"glow": 0.5, "spin": 1.5}},
-    "level_desc": ["伤害 +5", "法器 +1", "范围 +0.3", "伤害 +7", "法器 +1", "范围 +0.4", "万宝朝宗"]
+    "visual": {
+      "shape": "treasure",
+      "color": [
+        0.7,
+        0.5,
+        1.0
+      ],
+      "color2": [
+        1.0,
+        0.9,
+        0.5
+      ],
+      "fx": {
+        "glow": 0.5,
+        "spin": 1.5
+      }
+    },
+    "level_desc": [
+      "伤害 +5",
+      "法器 +1",
+      "范围 +0.3",
+      "伤害 +7",
+      "法器 +1",
+      "范围 +0.4",
+      "万宝朝宗"
+    ],
+    "slot": "orbit"
   },
   "xx_talisman": {
-    "id": "xx_talisman", "name": "符箓大阵", "type": "aura", "maps": ["xiuxian"],
-    "damage": 4, "cooldown": 0.4, "count": 1, "projectile_speed": 0,
-    "pierce": 0, "area": 1.2, "knockback": 0, "duration": 0,
-    "max_level": 8, "evolution": "",
+    "id": "xx_talisman",
+    "name": "符箓大阵",
+    "type": "aura",
+    "maps": [
+      "xiuxian"
+    ],
+    "damage": 4,
+    "cooldown": 0.4,
+    "count": 1,
+    "projectile_speed": 0,
+    "pierce": 0,
+    "area": 1.2,
+    "knockback": 0,
+    "duration": 0,
+    "max_level": 8,
+    "evolution": "",
     "desc": "符箓阵：持续真火",
-    "visual": {"shape": "talisman", "color": [0.95,0.75,0.2], "color2": [0.9,0.3,0.2], "fx": {"glow": 0.3, "particles": "rune", "pulse": 0.3}},
-    "level_desc": ["真火 +2", "范围 +0.3", "持续更久", "伤害 +3", "范围 +0.5", "符威加深", "天师法阵"]
+    "visual": {
+      "shape": "talisman",
+      "color": [
+        0.95,
+        0.75,
+        0.2
+      ],
+      "color2": [
+        0.9,
+        0.3,
+        0.2
+      ],
+      "fx": {
+        "glow": 0.3,
+        "particles": "rune",
+        "pulse": 0.3
+      }
+    },
+    "level_desc": [
+      "真火 +2",
+      "范围 +0.3",
+      "持续更久",
+      "伤害 +3",
+      "范围 +0.5",
+      "符威加深",
+      "天师法阵"
+    ],
+    "slot": "aura"
   },
   "xx_thunder": {
-    "id": "xx_thunder", "name": "雷法", "type": "projectile", "maps": ["xiuxian"],
-    "damage": 20, "cooldown": 1.1, "count": 1, "projectile_speed": 600,
-    "pierce": 1, "area": 1.0, "knockback": 25, "duration": 0,
-    "max_level": 8, "evolution": "",
+    "id": "xx_thunder",
+    "name": "雷法",
+    "type": "projectile",
+    "maps": [
+      "xiuxian"
+    ],
+    "damage": 20,
+    "cooldown": 1.1,
+    "count": 1,
+    "projectile_speed": 600,
+    "pierce": 1,
+    "area": 1.0,
+    "knockback": 25,
+    "duration": 0,
+    "max_level": 8,
+    "evolution": "",
     "desc": "掌心雷：落雷裂敌",
-    "visual": {"shape": "thunder", "color": [0.7,0.5,1.0], "color2": [1.0,0.95,0.3], "fx": {"glow": 0.6, "flicker": true, "particles": "spark"}},
-    "level_desc": ["伤害 +8", "雷速 +40", "穿透 +1", "连发 +1", "伤害 +10", "穿透 +1", "九天神雷"]
+    "visual": {
+      "shape": "thunder",
+      "color": [
+        0.7,
+        0.5,
+        1.0
+      ],
+      "color2": [
+        1.0,
+        0.95,
+        0.3
+      ],
+      "fx": {
+        "glow": 0.6,
+        "flicker": true,
+        "particles": "spark"
+      }
+    },
+    "level_desc": [
+      "伤害 +8",
+      "雷速 +40",
+      "穿透 +1",
+      "连发 +1",
+      "伤害 +10",
+      "穿透 +1",
+      "九天神雷"
+    ],
+    "slot": "main"
   },
   "xx_shanshui": {
-    "id": "xx_shanshui", "name": "山河社稷图", "type": "aura", "maps": ["xiuxian"],
-    "damage": 3, "cooldown": 1.2, "count": 1, "projectile_speed": 0,
-    "pierce": 0, "area": 1.5, "knockback": 0, "duration": 0,
-    "max_level": 8, "evolution": "",
+    "id": "xx_shanshui",
+    "name": "山河社稷图",
+    "type": "aura",
+    "maps": [
+      "xiuxian"
+    ],
+    "damage": 3,
+    "cooldown": 1.2,
+    "count": 1,
+    "projectile_speed": 0,
+    "pierce": 0,
+    "area": 1.5,
+    "knockback": 0,
+    "duration": 0,
+    "max_level": 8,
+    "evolution": "",
     "desc": "山河图：封印领域",
-    "visual": {"shape": "landscape", "color": [0.3,0.4,0.55], "color2": [0.6,0.7,0.85], "fx": {"glow": 0.2, "particles": "ink", "pulse": 0.2}},
-    "level_desc": ["封印 +1", "范围 +0.4", "持续更久", "伤害 +2", "范围 +0.5", "山河浩大", "乾坤封印"]
+    "visual": {
+      "shape": "landscape",
+      "color": [
+        0.3,
+        0.4,
+        0.55
+      ],
+      "color2": [
+        0.6,
+        0.7,
+        0.85
+      ],
+      "fx": {
+        "glow": 0.2,
+        "particles": "ink",
+        "pulse": 0.2
+      }
+    },
+    "level_desc": [
+      "封印 +1",
+      "范围 +0.4",
+      "持续更久",
+      "伤害 +2",
+      "范围 +0.5",
+      "山河浩大",
+      "乾坤封印"
+    ],
+    "slot": "aura"
   },
   "xx_swordarray": {
-    "id": "xx_swordarray", "name": "剑阵", "type": "orbit", "maps": ["xiuxian"],
-    "damage": 12, "cooldown": 0.9, "count": 3, "projectile_speed": 0,
-    "pierce": 0, "area": 1.4, "knockback": 20, "duration": 0,
-    "max_level": 8, "evolution": "",
+    "id": "xx_swordarray",
+    "name": "剑阵",
+    "type": "orbit",
+    "maps": [
+      "xiuxian"
+    ],
+    "damage": 18,
+    "cooldown": 0.9,
+    "count": 3,
+    "projectile_speed": 0,
+    "pierce": 0,
+    "area": 1.4,
+    "knockback": 20,
+    "duration": 0,
+    "max_level": 8,
+    "evolution": "",
     "desc": "万剑归宗：剑阵环身",
-    "visual": {"shape": "sword_array", "color": [0.8,0.9,1.0], "color2": [1.0,1.0,1.0], "fx": {"trail": true, "glow": 0.4}},
-    "level_desc": ["伤害 +5", "剑影 +1", "范围 +0.3", "伤害 +7", "剑影 +1", "范围 +0.4", "诛仙剑阵"]
+    "visual": {
+      "shape": "sword_array",
+      "color": [
+        0.8,
+        0.9,
+        1.0
+      ],
+      "color2": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "fx": {
+        "trail": true,
+        "glow": 0.4
+      }
+    },
+    "level_desc": [
+      "伤害 +5",
+      "剑影 +1",
+      "范围 +0.3",
+      "伤害 +7",
+      "剑影 +1",
+      "范围 +0.4",
+      "诛仙剑阵"
+    ],
+    "slot": "orbit"
+  },
+  "greatsword": {
+    "id": "greatsword",
+    "name": "巨剑（战士）",
+    "type": "sweep",
+    "class": "warrior",
+    "damage": 18,
+    "cooldown": 1.1,
+    "count": 1,
+    "projectile_speed": 0,
+    "pierce": 1,
+    "area": 1.6,
+    "knockback": 90,
+    "duration": 0,
+    "max_level": 8,
+    "evolution": "titan_blade",
+    "desc": "战士专属：巨型横扫，巨力击退",
+    "visual": {
+      "shape": "greatsword",
+      "color": [
+        1.0,
+        0.55,
+        0.25
+      ],
+      "color2": [
+        1.0,
+        0.85,
+        0.5
+      ],
+      "fx": {
+        "trail": true,
+        "glow": 0.5,
+        "particles": "spark"
+      }
+    },
+    "level_desc": [
+      "伤害 +7",
+      "横扫范围 +0.4",
+      "破甲打击 +1",
+      "伤害 +11",
+      "范围 +0.6",
+      "巨力击退 +30",
+      "斩铁无双"
+    ],
+    "slot": "main"
+  },
+  "bowshot": {
+    "id": "bowshot",
+    "name": "穿云箭（箭手）",
+    "type": "projectile",
+    "class": "archer",
+    "damage": 9,
+    "cooldown": 0.45,
+    "count": 2,
+    "projectile_speed": 560,
+    "pierce": 1,
+    "area": 1.0,
+    "knockback": 15,
+    "duration": 0,
+    "max_level": 8,
+    "evolution": "storm_arrow",
+    "desc": "箭手专属：远程连射，灵敏暴击",
+    "visual": {
+      "shape": "bowshot",
+      "color": [
+        0.7,
+        0.95,
+        0.4
+      ],
+      "color2": [
+        1.0,
+        1.0,
+        0.7
+      ],
+      "fx": {
+        "glow": 0.3,
+        "particles": "leaf"
+      }
+    },
+    "level_desc": [
+      "伤害 +4",
+      "连射 +1",
+      "弹速 +40",
+      "穿透 +1",
+      "伤害 +6",
+      "连射 +1",
+      "万箭齐发"
+    ],
+    "slot": "main"
+  },
+  "shield": {
+    "id": "shield",
+    "name": "壁垒盾（盾卫）",
+    "type": "orbit",
+    "class": "guardian",
+    "damage": 14,
+    "cooldown": 1.0,
+    "count": 2,
+    "projectile_speed": 0,
+    "pierce": 0,
+    "area": 1.4,
+    "knockback": 40,
+    "duration": 0,
+    "guard": 0.12,
+    "max_level": 8,
+    "evolution": "aegis",
+    "desc": "盾卫专属：环绕盾击，持盾减伤",
+    "visual": {
+      "shape": "shield",
+      "color": [
+        0.55,
+        0.7,
+        1.0
+      ],
+      "color2": [
+        0.85,
+        0.95,
+        1.0
+      ],
+      "fx": {
+        "glow": 0.4,
+        "spin": 1.0
+      }
+    },
+    "level_desc": [
+      "伤害 +4",
+      "盾击 +1",
+      "减伤 +4%",
+      "伤害 +6",
+      "范围 +0.4",
+      "坚壁 +6%",
+      "不动如山"
+    ],
+    "slot": "orbit"
+  },
+  "element_orb": {
+    "id": "element_orb",
+    "name": "元素核（元素法师）",
+    "type": "projectile",
+    "class": "element_mage",
+    "damage": 14,
+    "cooldown": 0.9,
+    "count": 1,
+    "projectile_speed": 520,
+    "pierce": 1,
+    "area": 1.0,
+    "knockback": 10,
+    "duration": 0,
+    "max_level": 8,
+    "evolution": "element_cataclysm",
+    "desc": "元素法师专属：元素弹幕，爆发法伤",
+    "visual": {
+      "shape": "element_orb",
+      "color": [
+        0.7,
+        0.5,
+        1.0
+      ],
+      "color2": [
+        0.4,
+        0.95,
+        1.0
+      ],
+      "fx": {
+        "glow": 0.6,
+        "flicker": true,
+        "particles": "rune"
+      }
+    },
+    "level_desc": [
+      "伤害 +6",
+      "弹速 +40",
+      "穿透 +1",
+      "连发 +1",
+      "伤害 +9",
+      "穿透 +1",
+      "元素湮灭"
+    ],
+    "slot": "off"
+  },
+  "summon": {
+    "id": "summon",
+    "name": "召唤环（召唤师）",
+    "type": "orbit",
+    "class": "summoner",
+    "damage": 12,
+    "cooldown": 1.0,
+    "count": 3,
+    "projectile_speed": 0,
+    "pierce": 0,
+    "area": 1.2,
+    "knockback": 12,
+    "duration": 0,
+    "max_level": 8,
+    "evolution": "legion",
+    "desc": "召唤师专属：环绕召唤物，持续输出",
+    "visual": {
+      "shape": "summon",
+      "color": [
+        0.25,
+        0.85,
+        0.78
+      ],
+      "color2": [
+        0.6,
+        1.0,
+        0.9
+      ],
+      "fx": {
+        "glow": 0.4,
+        "spin": 1.2,
+        "particles": "mote"
+      }
+    },
+    "level_desc": [
+      "伤害 +3",
+      "召唤物 +1",
+      "范围 +0.3",
+      "伤害 +5",
+      "召唤物 +1",
+      "范围 +0.4",
+      "万灵朝拜"
+    ],
+    "slot": "orbit"
+  },
+  "holy_circle": {
+    "id": "holy_circle",
+    "name": "圣环（治愈师）",
+    "type": "aura",
+    "class": "healer",
+    "damage": 4,
+    "cooldown": 0.5,
+    "count": 1,
+    "projectile_speed": 0,
+    "pierce": 0,
+    "area": 1.3,
+    "knockback": 0,
+    "duration": 0,
+    "heal_self": 0.02,
+    "max_level": 8,
+    "evolution": "sanctuary",
+    "desc": "治愈师专属：圣光领域，灼敌自愈",
+    "visual": {
+      "shape": "holy_circle",
+      "color": [
+        1.0,
+        0.92,
+        0.6
+      ],
+      "color2": [
+        1.0,
+        1.0,
+        0.85
+      ],
+      "fx": {
+        "glow": 0.5,
+        "pulse": 0.4,
+        "particles": "mote"
+      }
+    },
+    "level_desc": [
+      "圣光 +2",
+      "范围 +0.3",
+      "治疗 +1%",
+      "伤害 +3",
+      "范围 +0.5",
+      "治疗 +2%",
+      "复苏之环"
+    ],
+    "slot": "aura"
+  },
+  "shield_bow": {
+    "id": "shield_bow",
+    "name": "破盾弓",
+    "type": "projectile",
+    "damage": 11,
+    "cooldown": 0.7,
+    "count": 1,
+    "projectile_speed": 600,
+    "pierce": 1,
+    "area": 1.0,
+    "knockback": 12,
+    "duration": 0,
+    "shield_pen": 0.5,
+    "max_level": 8,
+    "evolution": "shieldbreaker",
+    "desc": "专破护盾：高护盾穿透，对带盾敌人造成大量真实伤害",
+    "visual": {
+      "shape": "shieldbow",
+      "color": [
+        0.3,
+        0.85,
+        0.95
+      ],
+      "color2": [
+        0.7,
+        1.0,
+        1.0
+      ],
+      "fx": {
+        "glow": 0.5,
+        "particles": "spark"
+      }
+    },
+    "level_desc": [
+      "伤害 +5",
+      "弹速 +50",
+      "穿透 +1",
+      "护盾穿透强化",
+      "伤害 +7",
+      "连发 +1",
+      "破盾无双"
+    ],
+    "slot": "off"
   }
 }

@@ -1,6 +1,13 @@
 {
-  "default": { "id": "default", "name": "幸存者", "hp": 100, "speed": 220, "start_weapon": "knife",  "color": "#33e0ff", "unlocked": true,  "cost": 0 },
-  "tank":    { "id": "tank",    "name": "硬汉",   "hp": 160, "speed": 180, "start_weapon": "whip",   "color": "#ffcc33", "unlocked": false, "cost": 200 },
-  "mage":    { "id": "mage",    "name": "法师",   "hp": 80,  "speed": 230, "start_weapon": "magic_wand", "color": "#aa66ff", "unlocked": false, "cost": 300 },
-  "rogue":   { "id": "rogue",   "name": "游侠",   "hp": 90,  "speed": 260, "start_weapon": "bible",  "color": "#66ff99", "unlocked": false, "cost": 400 }
+  "default": { "id": "default", "name": "幸存者", "hp": 100, "speed": 220, "start_weapon": "knife",  "color": "#33e0ff", "unlocked": true,  "cost": 0, "playable": true,  "is_class": false, "class": "", "desc": "无职业，均衡开局" },
+  "tank":    { "id": "tank",    "name": "硬汉",   "hp": 160, "speed": 180, "start_weapon": "whip",   "color": "#ffcc33", "unlocked": false, "cost": 200, "playable": false },
+  "mage":    { "id": "mage",    "name": "法师",   "hp": 80,  "speed": 230, "start_weapon": "magic_wand", "color": "#aa66ff", "unlocked": false, "cost": 300, "playable": false },
+  "rogue":   { "id": "rogue",   "name": "游侠",   "hp": 90,  "speed": 260, "start_weapon": "bible",  "color": "#66ff99", "unlocked": false, "cost": 400, "playable": false },
+
+  "warrior":      { "id": "warrior",      "name": "战士",     "hp": 140, "speed": 200, "start_weapon": "greatsword",   "color": "#ff7a3c", "unlocked": true, "cost": 0, "playable": true, "is_class": true, "class": "warrior",      "spec": "spec_warrior",      "desc": "近战横扫 · 高伤高击退" },
+  "archer":       { "id": "archer",       "name": "箭手",     "hp": 95,  "speed": 240, "start_weapon": "bowshot",      "color": "#7be06a", "unlocked": true, "cost": 0, "playable": true, "is_class": true, "class": "archer",       "spec": "spec_archer",       "desc": "远程连射 · 暴击灵敏" },
+  "guardian":     { "id": "guardian",     "name": "盾卫",     "hp": 170, "speed": 170, "start_weapon": "shield",       "color": "#5aa0ff", "unlocked": true, "cost": 0, "playable": true, "is_class": true, "class": "guardian",     "spec": "spec_guardian",     "desc": "环绕盾击 · 减伤护体" },
+  "element_mage": { "id": "element_mage", "name": "元素法师", "hp": 85,  "speed": 220, "start_weapon": "element_orb",   "color": "#b06bff", "unlocked": true, "cost": 0, "playable": true, "is_class": true, "class": "element_mage", "spec": "spec_element_mage", "desc": "元素弹幕 · 爆发法伤" },
+  "summoner":     { "id": "summoner",     "name": "召唤师",   "hp": 100, "speed": 210, "start_weapon": "summon",       "color": "#3fd6c8", "unlocked": true, "cost": 0, "playable": true, "is_class": true, "class": "summoner",     "spec": "spec_summoner",     "desc": "环绕召唤物 · 持续输出" },
+  "healer":       { "id": "healer",       "name": "治愈师",   "hp": 120, "speed": 215, "start_weapon": "holy_circle",   "color": "#ffe07a", "unlocked": true, "cost": 0, "playable": true, "is_class": true, "class": "healer",       "spec": "spec_healer",       "desc": "圣光领域 · 自愈重伤" }
 }

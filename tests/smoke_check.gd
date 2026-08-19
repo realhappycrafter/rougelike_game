@@ -5,6 +5,7 @@ extends Node
 
 const NetSerialize = preload("res://scripts/systems/net_serialize.gd")
 const WeaponVisual = preload("res://scripts/systems/weapon_visual.gd")
+const AffixVisual = preload("res://scripts/systems/affix_visual.gd")
 
 var fails = []
 var checks = 0
@@ -15,6 +16,7 @@ func _ready():
 	_check_weapon_visuals()
 	_check_meta_stats()
 	_check_meta_math()
+	_check_classes()
 	_check_unlock_chain()
 	await _check_menu_ui()
 	_check_buy_and_apply()
@@ -26,6 +28,7 @@ func _ready():
 	_check_short_progression()
 	await _check_shop_buy()
 	_check_run_mode_mult()
+	_check_affixes()
 	print("[smoke] 共 %d 项检查，失败 %d 项" % [checks, fails.size()])
 	for f in fails:
 		printerr("[smoke][FAIL] " + f)
@@ -120,7 +123,8 @@ func _check_weapon_visuals() -> void:
 ## 3) meta_upgrades 的 stat 必须是 player 已实现的字段名
 func _check_meta_stats() -> void:
 	var known = ["max_hp", "damage", "speed", "pickup", "cooldown", "armor",
-		"luck", "crit", "crit_dmg", "lifesteal", "revives", "gold_gain", "exp_gain"]
+		"luck", "crit", "crit_dmg", "lifesteal", "shield_pen", "revives", "gold_gain", "exp_gain",
+		"class_spec"]
 	_ok(DataTables.meta_upgrades.size() > 0, "meta_upgrades.json 为空")
 	for id in DataTables.meta_upgrades.keys():
 		var u = DataTables.meta_upgrades[id]
@@ -128,6 +132,78 @@ func _check_meta_stats() -> void:
 		_ok(int(u.get("max_level", 0)) > 0, "meta %s 的 max_level 非法" % id)
 		_ok(int(u.get("cost_base", 0)) > 0, "meta %s 的 cost_base 非法" % id)
 		_ok(float(u.get("cost_growth", 0.0)) >= 1.0, "meta %s 的 cost_growth 应 >= 1.0" % id)
+
+## 4b) 职业系统完整性：每个职业必须有专属武器（带 class 标签）与对应专精 meta；
+## 专精 meta 必须带 class 字段 + spec_per_level 多属性；无职业（is_class=false）不强制。
+func _check_classes() -> void:
+	var class_ids = []
+	for cid in DataTables.characters.keys():
+		var c = DataTables.characters[cid]
+		if not c.get("is_class", false):
+			continue
+		class_ids.append(cid)
+		_ok(class_ids.size() >= 0, "")
+		# 专属武器存在且带 class 标签
+		var wid = str(c.get("start_weapon", ""))
+		_ok(DataTables.weapons.has(wid), "职业 %s 的专属武器 %s 不存在" % [cid, wid])
+		if DataTables.weapons.has(wid):
+			_ok(str(DataTables.weapons[wid].get("class", "")) == cid,
+				"职业 %s 的专属武器 %s 的 class 标签未指向该职业" % [cid, wid])
+		# 专精 meta 存在且字段合法
+		var spec = str(c.get("spec", ""))
+		_ok(spec != "" and DataTables.meta_upgrades.has(spec),
+			"职业 %s 缺少对应专精 meta（%s）" % [cid, spec])
+		if DataTables.meta_upgrades.has(spec):
+			var su = DataTables.meta_upgrades[spec]
+			_ok(str(su.get("class", "")) == cid,
+				"专精 %s 的 class 字段未指向职业 %s" % [spec, cid])
+			_ok(su.has("spec_per_level") and typeof(su["spec_per_level"]) == TYPE_DICTIONARY,
+				"专精 %s 缺少 spec_per_level 字典" % spec)
+	# 反向：所有带 class 的武器都应被某个职业引用为 start_weapon
+	for wid in DataTables.weapons.keys():
+		var wclass = str(DataTables.weapons[wid].get("class", ""))
+		if wclass == "":
+			continue
+		var found = false
+		for cid in DataTables.characters.keys():
+			if str(DataTables.characters[cid].get("start_weapon", "")) == wid:
+				found = true
+				break
+		_ok(found, "专属武器 %s 未被任何职业引用为 start_weapon" % wid)
+
+	# 专精落点：战士专精 Lv3 应使伤害 +0.12 且生命 +54（spec_per_level 多属性）
+	var backup = SaveManager.data.duplicate(true)
+	SaveManager.data["meta_upgrades"] = {}
+	SaveManager.data["meta_upgrades"]["spec_warrior"] = 3
+	var p = load("res://scripts/entities/player.gd").new()
+	add_child(p)
+	var dmg0 = p.damage_bonus
+	var hp0 = p.base_max_hp
+	p.apply_meta_upgrades(SaveManager.get_meta_upgrades())
+	_ok(is_equal_approx(p.damage_bonus, dmg0 + 0.04 * 3.0),
+		"战士专精 Lv3 应使伤害 +0.12，实际 %.2f" % (p.damage_bonus - dmg0))
+	_ok(is_equal_approx(p.base_max_hp, hp0 + 18.0 * 3.0),
+		"战士专精 Lv3 应使生命 +54，实际 %.1f" % (p.base_max_hp - hp0))
+	p.queue_free()
+	SaveManager.data = backup
+	SaveManager.save_data()
+
+	# 三选一职业过滤：选定战士时，升级池不应出现其他职业的武器词条
+	GameManager.player_class = "warrior"
+	var pu = load("res://scripts/entities/player.gd").new()
+	add_child(pu)
+	GameManager.map_id = "zombie"
+	pu.weapons = {}
+	pu.passives = {}
+	var opts = UpgradePool.generate(pu)
+	for o in opts:
+		if str(o.get("type", "")) == "weapon":
+			var oid = str(o.get("id", ""))
+			var oclass = str(DataTables.weapons.get(oid, {}).get("class", ""))
+			_ok(oclass == "" or oclass == "warrior",
+				"战士的三选一出现了其他职业武器 %s（class=%s）" % [oid, oclass])
+	GameManager.player_class = ""
+	pu.queue_free()
 
 ## 5) 通关解锁链（新规则）：下一界解锁需「长局通关 且 短局 3 局全通」同时满足，
 ##    仅通关其一不得解锁下一界。备份后写回，避免污染玩家进度。
@@ -540,3 +616,90 @@ func _check_run_mode_mult() -> void:
 	GameManager.diff = backup_diff
 	GameManager.game_mode = backup_mode
 	GameManager.player = backup_player
+
+## 16) 词条系统（质变 / 超质变 / 怪物黑词条）数据完整性 + 运行时聚合真实验证
+func _check_affixes() -> void:
+	var shapes = {}
+	for s in AffixVisual.shape_list():
+		shapes[s] = true
+	# 16a) 每件武器的 质变 / 超质变 配对 + 形状/颜色/前置链 合法
+	var mut_by_weapon = {}
+	for aid in DataTables.mutations.keys():
+		var a = DataTables.mutations[aid]
+		var tier = str(a.get("tier", ""))
+		var cat = str(a.get("category", ""))
+		# 形状 / 颜色 / super 字段
+		var vis = a.get("visual", {})
+		_ok(typeof(vis) == TYPE_DICTIONARY and vis.size() > 0, "词条 %s 缺少 visual" % aid)
+		var sh = str(vis.get("shape", ""))
+		_ok(sh != "", "词条 %s 的 visual.shape 不能为空" % aid)
+		_ok(shapes.has(sh), "词条 %s 的 visual.shape=%s 未被 AffixVisual 支持（需新增专属分支）" % [aid, sh])
+		_ok(vis.has("super"), "词条 %s 的 visual 缺少 super 布尔字段" % aid)
+		var col = a.get("color", [])
+		_ok(typeof(col) == TYPE_ARRAY and col.size() >= 3,
+			"词条 %s 的 color 应为 [r,g,b] 数组" % aid)
+		# 超质变前置必须存在且为 mutation
+		if tier == "super":
+			var req = str(a.get("require_affix", ""))
+			_ok(req != "", "超质变 %s 缺少 require_affix 前置" % aid)
+			_ok(DataTables.mutations.has(req), "超质变 %s 的前置 %s 不存在" % [aid, req])
+			if DataTables.mutations.has(req):
+				_ok(str(DataTables.mutations[req].get("tier", "")) == "mutation",
+					"超质变 %s 的前置 %s 应为 mutation 而非 %s" % [aid, req, str(DataTables.mutations[req].get("tier", ""))])
+		if cat == "weapon" and tier == "mutation":
+			mut_by_weapon[str(a.get("require_weapon", ""))] = aid
+	# 武器类超质变必须对应同武器的质变前置
+	for aid in DataTables.mutations.keys():
+		var a = DataTables.mutations[aid]
+		if str(a.get("category", "")) == "weapon" and str(a.get("tier", "")) == "super":
+			var wid = str(a.get("require_weapon", ""))
+			_ok(mut_by_weapon.has(wid), "武器超质变 %s 缺少同武器的质变前置（weapon=%s）" % [aid, wid])
+	# 16b) 怪物黑词条
+	_ok(DataTables.monster_affixes.size() > 0, "monster_affixes.json 为空")
+	for aid in DataTables.monster_affixes.keys():
+		var a = DataTables.monster_affixes[aid]
+		var vis = a.get("visual", {})
+		_ok(typeof(vis) == TYPE_DICTIONARY and vis.size() > 0, "怪物词条 %s 缺少 visual" % aid)
+		var sh = str(vis.get("shape", ""))
+		_ok(shapes.has(sh), "怪物词条 %s 的 visual.shape=%s 未被 AffixVisual 支持" % [aid, sh])
+		_ok(str(a.get("tier", "")) == "monster", "怪物词条 %s 的 tier 应为 monster" % aid)
+		var minr = int(a.get("min_rank", 0))
+		_ok(minr >= 0 and minr < 5, "怪物词条 %s 的 min_rank=%d 越界（0..4）" % [aid, minr])
+		var col = a.get("color", [])
+		_ok(typeof(col) == TYPE_ARRAY and col.size() >= 3, "怪物词条 %s 的 color 应为 [r,g,b]" % aid)
+	# 16c) 难度表 affix_count 合法
+	_ok(DataTables.difficulties.size() > 0, "difficulties.json 为空")
+	for did in DataTables.difficulties.keys():
+		var ac = int(DataTables.difficulties[did].get("affix_count", -1))
+		_ok(ac >= 0, "难度 %s 的 affix_count 缺失或为负" % did)
+	# 16d) 运行时聚合真实验证（不依赖完整对局，直接驱动 AffixManager）
+	if DataTables.mutations.size() > 0:
+		AffixManager.reset_run()
+		var sample_wid = ""
+		var sample_mut = ""
+		for aid in DataTables.mutations.keys():
+			var a = DataTables.mutations[aid]
+			if str(a.get("category", "")) == "weapon" and str(a.get("tier", "")) == "mutation":
+				sample_wid = str(a.get("require_weapon", ""))
+				sample_mut = aid
+				break
+		if sample_mut != "":
+			AffixManager.register_weapon_affix(sample_wid, sample_mut)
+			var m1 = AffixManager.weapon_mods(sample_wid)
+			var d1 = m1.damage_mult
+			for aid in DataTables.mutations.keys():
+				var a = DataTables.mutations[aid]
+				if str(a.get("category", "")) == "weapon" and str(a.get("tier", "")) == "super" and str(a.get("require_weapon", "")) == sample_wid:
+					AffixManager.register_weapon_affix(sample_wid, aid)
+					break
+			var m2 = AffixManager.weapon_mods(sample_wid)
+			_ok(m2.damage_mult > d1, "武器超质变应使 damage_mult 高于仅质变（%.3f -> %.3f）" % [d1, m2.damage_mult])
+		# 怪物黑词条削弱聚合：至少削弱玩家一项
+		AffixManager.reset_run()
+		if DataTables.monster_affixes.size() > 0:
+			var mid = DataTables.monster_affixes.keys()[0]
+			AffixManager.add_monster_affix(mid)
+			var db = AffixManager.monster_player_debuffs()
+			_ok(db.damage_mult <= 1.0 or db.speed_mult <= 1.0 or db.max_hp_mult <= 1.0 or db.heal_mult <= 1.0 or db.luck_mult <= 1.0 or db.pickup_mult <= 1.0 or db.gold_mult <= 1.0,
+				"怪物黑词条 %s 应至少削弱玩家一项属性" % mid)
+		AffixManager.reset_run()

@@ -13,8 +13,12 @@ var life = 0.0
 var hit_set = []   # 已命中敌人 uid
 var visual = {}     # 外观描述 {"shape":, "color":}
 var owner_player = null  # 发射此弹的玩家（暴击/吸血归属）
+var extra_pen = 0.0      # 本弹额外护盾穿透（来自武器 shield_pen）
+var crit_bonus = 0.0     # 词条附加暴击率（crit_up 累加）
+var split_count = 0      # 命中分裂出的弹数（split 词条，子弹不再二次分裂）
+var owner_wid = ""       # 发射武器 id（用于 AffixManager.apply_weapon_hit 触发命中特效）
 
-func launch(pos: Vector2, v: Vector2, dmg: float, pc: int, kback: float, life_t: float, m, owner = null, visual_data = {}) -> void:
+func launch(pos: Vector2, v: Vector2, dmg: float, pc: int, kback: float, life_t: float, m, owner = null, visual_data = {}, ep: float = 0.0, crit_bonus: float = 0.0, split_count: int = 0, owner_wid: String = "") -> void:
 	global_position = pos
 	vel = v
 	damage = dmg
@@ -24,6 +28,10 @@ func launch(pos: Vector2, v: Vector2, dmg: float, pc: int, kback: float, life_t:
 	main = m
 	owner_player = owner
 	visual = visual_data
+	extra_pen = ep
+	crit_bonus = crit_bonus
+	split_count = split_count
+	owner_wid = owner_wid
 	rotation = v.angle()   # 朝飞行方向（飞镖类外观据此旋转）
 	visible = true
 	hit_set = []
@@ -48,7 +56,12 @@ func _physics_process(delta: float) -> void:
 		if hit_set.has(uid):
 			continue
 		hit_set.append(uid)
-		EnemyManager.take_damage(uid, damage, vel.normalized(), knockback, owner_player)
+		EnemyManager.take_damage(uid, damage, vel.normalized(), knockback, owner_player, extra_pen, crit_bonus)
+		if owner_wid != "":
+			AffixManager.apply_weapon_hit(owner_wid, uid, damage, owner_player)
+		# 分裂：首次命中时向两侧甩出子弹（子弹不再二次分裂，避免无限递归）
+		if split_count > 0 and pierce >= 0:
+			_spawn_split(uid)
 		if pierce <= 0:
 			retire()
 			return
@@ -56,6 +69,20 @@ func _physics_process(delta: float) -> void:
 			pierce -= 1
 	if life <= 0:
 		retire()
+
+## 命中分裂：在命中瞬间向左右扇形甩出 split_count 颗子弹（伤害/击退/存活均衰减）
+func _spawn_split(uid: int) -> void:
+	var base_ang = vel.angle()
+	var n = split_count
+	for i in range(n):
+		var frac = (i - (n - 1) / 2.0) / max(1.0, float(n))
+		var ang = base_ang + frac * deg_to_rad(50)
+		var child = main.get_projectile()
+		if child == null:
+			break
+		child.launch(global_position, Vector2(cos(ang), sin(ang)) * vel.length(),
+			damage * 0.6, 0, knockback * 0.6, life * 0.6, main, owner_player, visual, extra_pen, crit_bonus, 0, owner_wid)
+		child.hit_set.append(uid)   # 避免子弹立刻再次命中同一敌人导致重复结算
 
 func retire() -> void:
 	visible = false

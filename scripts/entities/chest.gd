@@ -123,12 +123,15 @@ func _grant() -> void:
 			var v = int(data.value * mult)
 			GameManager.gold += v
 			desc = q + "·金币 +" + str(v)
-	# 红色奖励额外给一笔金币（极品保底）
+		# 职业专属武器强化（class_weapon）已移出宝箱：专属武器只在商店与升级三选一出现，
+		# 避免宝箱把其他/本职业专属武器塞给玩家（用户需求）。
+		# 红色奖励额外给一笔金币（极品保底）
 	if lvl == 5:
 		GameManager.gold += 100
 		desc += " +金币100"
 	if main != null and main.has_method("on_chest_opened"):
-		main.on_chest_opened(desc)
+		var qcol = QUALITY_COLORS[lvl] if lvl < QUALITY_COLORS.size() else Color.GOLD
+		main.on_chest_opened(desc, qcol)
 
 func _expire() -> void:
 	taken = true

@@ -7,20 +7,24 @@ extends Node
 ## 1 个绘制表面 + 近似 O(n) 邻居查询。
 
 signal enemy_died(enemy: Dictionary)
+signal enemy_fire(epos: Vector2, edir: Vector2, espeed: float, edmg: float, ecol: Color)
+signal enemy_explode(epos: Vector2, eradius: float, edmg: float)
 
 const DEFAULT_CELL: float = 64.0
 const SEP_STRENGTH: float = 0.5   # 分离斥力强度（累加邻居排斥向量后乘此系数）
 const SEP_BATCH: int = 350        # 每帧最多处理的分离敌人数（高数量下限制 CPU 开销）
 const SpatialHashScript = preload("res://scripts/systems/spatial_hash.gd")
+const CreatureVisual = preload("res://scripts/systems/creature_visual.gd")
 
 var hash = null   # SpatialHash 实例（preload 构造，避免 class_name 全局注册时序问题）
 var enemies: Array = []            # 每个元素是一个敌人数据 Dictionary
+var explosions: Array = []          # 自爆怪爆炸特效 [{pos, r, t}]，由 host 端 _update 计时
+var hit_effects: Array = []         # 打击特效 [{pos, t, crit, dir}]：受击扩散环+火花，0.25s 衰减
+var lightning_fx: Array = []        # 连锁闪电特效 [{pts: PackedVector2Array, t, super}]，0.22s 衰减
 var uid_to_index: Dictionary = {} # uid -> enemies 数组下标
 var free_indices: Array = []      # 可复用的数组下标
 var next_uid: int = 1
 var _sep_cursor: int = 0      # 分离处理的轮转游标（每帧处理一批，隔帧覆盖全部）
-var _enemy_tex_cache: Dictionary = {}    # "shape|color" -> 剪影贴图（按贴图合批渲染用）
-const _CIRC_TEX_SIZE: int = 64
 
 var render_node: Node2D = null
 var EnemyRenderScript = preload("res://scripts/systems/enemy_render.gd")
@@ -147,14 +151,40 @@ func spawn(eid: String, pos: Vector2, scale_m: float) -> int:
 	e.size = float(d.size)
 	e.color = Color.from_string(str(d.color), Color.RED)
 	e.shape = str(d.get("shape", "imp"))
-	e.tex = get_enemy_texture(e.shape, e.color)
+	e.tex = get_enemy_texture(e.shape, e.color, GameManager.map_id)
 	e.boss = bool(d.get("boss", false))
 	e.elite = bool(d.get("elite", false)) or eid.begins_with("elite")
 	e.flash_t = 0.0
 	e.crit_pop_t = 0.0
+	e.anim_t = randf() * 10.0   # 动画计时器（随机起点，避免全体敌人同相摆动）
+	e.attack_t = 0.0            # 攻击姿态计时（>0 时使用攻击帧 + 攻击脉冲）
 	e.scale_mul = scale_m
 	e.stuck_t = 0.0
 	e.avoid_dir = Vector2.ZERO
+	e.ai = str(d.get("ai", "chase"))
+	e.shield = float(d.get("shield", 0.0))
+	e.max_shield = e.shield
+	e.burn_t = 0.0
+	e.burn_dps = 0.0
+	e.freeze_t = 0.0
+	e.freeze_slow = 0.0
+	e.regen = 0.0
+	# 怪物黑色词条：强化全体怪物（hp/伤害/速度/护盾/再生），仅当选了黑词条时生效
+	if AffixManager.active_monster.size() > 0:
+		var mm = AffixManager.monster_enemy_mods()
+		e.max_hp *= mm.hp_mult
+		e.hp = e.max_hp
+		e.contact_damage *= mm.damage_mult * mm.touch_dmg_mult
+		e.speed *= mm.speed_mult
+		if mm.shield_add > 0.0:
+			e.shield += mm.shield_add
+			e.max_shield = e.shield
+		e.regen = mm.regen
+	e.suicide = bool(d.get("suicide", false)) or (str(d.get("ai", "")) == "suicide")
+	e.blast_radius = float(d.get("blast_radius", 0.0))
+	e.fire_interval = float(d.get("fire_interval", 2.0))
+	e.fire_cd = 0.0
+	e.proj_speed = float(d.get("projectile_speed", 240.0))
 	uid_to_index[uid] = idx
 	hash.insert(uid, pos)
 	return uid
@@ -222,24 +252,53 @@ func query_near(pos: Vector2, radius: float) -> Array:
 	return out
 
 ## ---- 伤害 / 死亡 ----
-func take_damage(uid: int, amount: float, kdir: Vector2 = Vector2.ZERO, kback: float = 0.0, source = null) -> void:
+## extra_pen：本发攻击额外护盾穿透（来自武器数据 shield_pen），与玩家属性穿透叠加。
+## 护盾机制：pen（0~1）比例的伤害直接打血，其余先扣护盾；pen=0 全打盾、pen=1 无视护盾。
+func take_damage(uid: int, amount: float, kdir: Vector2 = Vector2.ZERO, kback: float = 0.0, source = null, extra_pen: float = 0.0, crit_bonus: float = 0.0) -> void:
 	var e = get_enemy(uid)
 	if e.is_empty():
 		return
 	var dealt = amount
-	# 暴击判定（唯一扣血出口，覆盖全部武器路径）；source 为造成伤害的玩家节点
-	if source != null and source.crit_chance > 0.0 and randf() < source.crit_chance:
+	# 暴击判定（唯一扣血出口，覆盖全部武器路径）；source 为造成伤害的玩家节点。
+	# crit_bonus 为词条附加暴击率（weapon_base 的 crit_up flag 累加）。
+	var crit_roll = 0.0
+	if source != null and source.crit_chance > 0.0:
+		crit_roll = source.crit_chance + crit_bonus
+	var was_crit = false
+	if crit_roll > 0.0 and randf() < crit_roll:
 		dealt *= source.effective_crit_mult()
 		e.crit_pop_t = 0.18
-	e.hp -= dealt
+		was_crit = true
+	# 护盾穿透：pen 比例的伤害直接打血，其余先扣护盾
+	var pen = clamp(extra_pen, 0.0, 1.0)
+	if source != null and source.has_method("get_shield_pen"):
+		pen = clamp(source.get_shield_pen() + extra_pen, 0.0, 1.0)
+	var hp_part = dealt * pen
+	var shield_part = dealt * (1.0 - pen)
+	if e.shield > 0.0 and shield_part > 0.0:
+		var absorbed = min(e.shield, shield_part)
+		e.shield -= absorbed
+		shield_part -= absorbed
+	hp_part += shield_part
+	e.hp -= hp_part
 	e.flash_t = 0.12
+	# 打击特效（受击扩散环 + 火花）：统一伤害出口触发，含暴击强化
+	hit_effects.append({
+		"pos": e.pos, "t": 0.0, "crit": was_crit,
+		"dir": kdir if kdir != Vector2.ZERO else Vector2(randf() - 0.5, randf() - 0.5).normalized()
+	})
+	if hit_effects.size() > 60:
+		hit_effects.pop_front()
 	# 吸血：造成实际伤害后按比例的回血
 	if source != null and source.lifesteal > 0.0:
-		source.heal(dealt * source.lifesteal)
+		source.heal(hp_part * source.lifesteal)
 	if kback > 0.0 and kdir != Vector2.ZERO:
 		e.pos += kdir * kback * 0.04
 	if e.hp <= 0.0:
-		_kill(uid)
+		if e.suicide:
+			_explode(uid)
+		else:
+			_kill(uid)
 
 func _kill(uid: int) -> void:
 	var e = get_enemy(uid)
@@ -255,6 +314,76 @@ func _kill(uid: int) -> void:
 	free_indices.append(e.index)
 	e.alive = false
 	enemy_died.emit(snapshot)
+
+## 自爆怪爆炸：对范围内所有玩家结算 AoE（main._on_enemy_explode 处理），然后正常死亡掉落
+func _explode(uid: int) -> void:
+	var e = get_enemy(uid)
+	if e.is_empty():
+		return
+	enemy_explode.emit(e.pos, e.blast_radius, float(e.contact_damage))
+	_kill(uid)
+
+## ---------- 词条命中特效（由 AffixManager._fx_trigger 调用）----------
+
+## 范围爆发：对 uid 周围 radius 内的敌人（不含自身）造成 dmg（质变 explode 特效）
+func aoe_burst(uid: int, dmg: float, radius: float, source) -> void:
+	var center = get_enemy_pos(uid)
+	if center == Vector2.ZERO:
+		return
+	for nuid in query_near(center, radius):
+		if nuid == uid:
+			continue
+		take_damage(nuid, dmg, Vector2.ZERO, 0.0, source, 0.0)
+
+## 连锁：从 uid 起，向 jumps 个最近的未命中敌人跳跃造成伤害（质变 chain 特效）
+## is_super：超质变时闪电更华丽（更多跳数由调用方控制，此处决定配色/粗细）
+func chain_to(uid: int, dmg: float, jumps: int, source, is_super: bool = false) -> void:
+	var hit = {uid: true}
+	var cur = uid
+	var pts: PackedVector2Array = [get_enemy_pos(cur)]
+	for _i in range(jumps):
+		var cpos = get_enemy_pos(cur)
+		if cpos == Vector2.ZERO:
+			break
+		var next_uid = -1
+		var bd = INF
+		for e in enemies:
+			if not e.alive or hit.has(e.uid):
+				continue
+			var dd = e.pos.distance_squared_to(cpos)
+			if dd < bd:
+				bd = dd
+				next_uid = e.uid
+		if next_uid < 0:
+			break
+		hit[next_uid] = true
+		take_damage(next_uid, dmg, Vector2.ZERO, 0.0, source, 0.0)
+		pts.append(get_enemy_pos(next_uid))
+		cur = next_uid
+	# 连锁闪电可视化：锯齿折线（渲染端按 t 抖动 + 配色区分质变/超质变）
+	if pts.size() >= 2:
+		lightning_fx.append({"pts": pts, "t": 0.0, "super": is_super})
+		if lightning_fx.size() > 12:
+			lightning_fx.pop_front()
+
+## 上状态：burn=持续灼烧 DoT（power 为每秒伤害，dur 持续秒数）；freeze=减速（power 0~1 -> 最大 60% 减速）
+func add_status(uid: int, kind: String, dur: float, power: float) -> void:
+	var e = get_enemy(uid)
+	if e.is_empty():
+		return
+	if kind == "burn":
+		e.burn_t = max(e.burn_t, dur)
+		e.burn_dps = max(e.burn_dps, power)
+	elif kind == "freeze":
+		e.freeze_t = max(e.freeze_t, dur)
+		e.freeze_slow = clamp(power, 0.0, 1.0) * 0.6
+
+## 破盾重击：直接削减敌人护盾（无视血量），用于质变 shield_break 特效
+func shield_strike(uid: int, dmg: float, source) -> void:
+	var e = get_enemy(uid)
+	if e.is_empty():
+		return
+	e.shield = max(0.0, e.shield - dmg)
 
 ## 强制撤离某个敌人（Boss 阶段超时撤离用）：不掉落、不计击杀、不触发奖励
 func despawn_uid(uid: int) -> void:
@@ -296,10 +425,46 @@ func _steer(e: Dictionary, target: Vector2) -> Vector2:
 	e.avoid_dir = best
 	return best
 
+## 远程怪走位：与目标保持 ~200 距离（太近后撤 / 太远靠近 / 适中横向走位），并叠加避障。
+func _steer_ranged(e: Dictionary, to: Vector2, dist: float) -> Vector2:
+	var desired = 200.0
+	var dir: Vector2
+	if dist < 0.001:
+		return Vector2.ZERO
+	if dist < desired - 40.0:
+		dir = -to.normalized()                      # 拉开距离
+	elif dist > desired + 40.0:
+		dir = to.normalized()                       # 靠近
+	else:
+		var side = 1.0 if int(e.uid) % 2 == 0 else -1.0
+		dir = Vector2(-to.y, to.x).normalized() * side   # 横向走位
+	# 避障：若正前方被墙挡，改用通用规避方向
+	var step = e.size + 26.0
+	var ahead = e.pos + dir * step
+	var push = resolve_obstacles(ahead, e.size).distance_to(ahead)
+	if push > 2.0:
+		dir = _steer(e, e.pos + to)
+	return dir
+
 ## ---- 每帧更新 ----
 ## players：参与战斗的玩家节点数组（host 端 = 本人 + 各客机代理；客机端为空，由 host 模拟）。
 ## 每个敌人追逐「最近的玩家」；接触伤害对所有玩家分别结算。
 func _update(delta: float, players: Array) -> void:
+	# 0) 状态tick：灼烧 DoT / 冰冻计时 / 再生（在移动前结算，可能直接致死）
+	for e in enemies:
+		if not e.alive:
+			continue
+		if e.burn_t > 0.0 and e.burn_dps > 0.0:
+			e.burn_t -= delta
+			e.hp -= e.burn_dps * delta
+			e.flash_t = max(e.flash_t, 0.05)
+			if e.hp <= 0.0:
+				_kill(e.uid)
+				continue
+		if e.freeze_t > 0.0:
+			e.freeze_t -= delta
+		if e.regen > 0.0 and e.hp < e.max_hp:
+			e.hp = min(e.max_hp, e.hp + e.regen * delta)
 	# 1) 追踪玩家移动（朝最近玩家）+ 更新哈希位置
 	for e in enemies:
 		if not e.alive:
@@ -311,12 +476,29 @@ func _update(delta: float, players: Array) -> void:
 			if d < bd:
 				bd = d
 				best_pos = p.global_position
-		# 障碍规避转向：被墙挡住时沿最通畅的偏转方向绕行，避免卡墙（需求 #4）
-		var dir = _steer(e, best_pos)
+		var to = best_pos - e.pos
+		var dist = to.length()
+		# 按 ai 分支计算移动方向
+		var dir: Vector2
+		if e.ai == "ranged":
+			dir = _steer_ranged(e, to, dist)
+		else:
+			# chase / suicide 都直奔玩家
+			dir = _steer(e, best_pos)
 		if dir.length_squared() > 0.0001:
 			dir = dir.normalized()
 		var old = e.pos
-		e.pos += dir * e.speed * delta
+		var spd = e.speed
+		if e.freeze_t > 0.0:
+			spd *= (1.0 - e.freeze_slow)
+		e.pos += dir * spd * delta
+		# 远程怪开火（host 端，信号交给 main 生成敌弹）
+		if e.ai == "ranged":
+			e.fire_cd -= delta
+			if e.fire_cd <= 0.0 and dist < 520.0:
+				var d2 = to.normalized()
+				enemy_fire.emit(e.pos + d2 * e.size, d2, e.proj_speed, e.contact_damage, e.color)
+				e.fire_cd = e.fire_interval
 		if e.flash_t > 0.0:
 			e.flash_t = max(0.0, e.flash_t - delta)
 		if e.crit_pop_t > 0.0:
@@ -363,8 +545,34 @@ func _update(delta: float, players: Array) -> void:
 			var o = get_enemy(nuid)
 			if o.is_empty():
 				continue
-			if o.pos.distance_to(p.global_position) <= o.size + p.body_radius:
+			var d = o.pos.distance_to(p.global_position)
+			# 自爆怪：进入爆炸半径即引爆（已对范围内所有玩家结算 AoE），随后移除
+			if o.suicide and d <= o.blast_radius + p.body_radius:
+				_explode(nuid)
+				continue
+			if d <= o.size + p.body_radius:
+				o.attack_t = 0.35   # 攻击姿态：切攻击帧 + 红色凶光（动画表现）
 				p.take_damage(o.contact_damage)
+
+	# 5) 特效计时：爆炸光环 / 打击特效 / 连锁闪电 / 敌人动画与攻击姿态
+	for i in range(explosions.size() - 1, -1, -1):
+		explosions[i].t += delta
+		if explosions[i].t >= 0.35:
+			explosions.remove_at(i)
+	for i in range(hit_effects.size() - 1, -1, -1):
+		hit_effects[i].t += delta
+		if hit_effects[i].t >= 0.25:
+			hit_effects.remove_at(i)
+	for i in range(lightning_fx.size() - 1, -1, -1):
+		lightning_fx[i].t += delta
+		if lightning_fx[i].t >= 0.22:
+			lightning_fx.remove_at(i)
+	for e in enemies:
+		if not e.alive:
+			continue
+		e.anim_t += delta
+		if e.attack_t > 0.0:
+			e.attack_t = max(0.0, e.attack_t - delta)
 
 ## 紧凑序列化：供 host 广播快照（数值四舍五入减体积；Color 转 [r,g,b] 数组便于 JSON）
 func serialize_compact() -> Array:
@@ -388,188 +596,13 @@ func serialize_compact() -> Array:
 	return out
 
 ## ---- 渲染 ----
-## 按敌人 shape 程序化生成「哥特剪影」贴图（每种怪独特轮廓 + 眼睛），缓存 key=shape|color。
-## 渲染时仍按贴图（e.tex）分组连续 draw_texture_rect，Godot 2D 自动合批，
-## 绘制调用数 ~= 怪物种数（≤11），Web 单线程下保持低开销（性能没回归）。
-## 贴图在首次生成某 (shape,color) 时一次性光栅化（手写像素基元），之后复用。
+## 怪物「模型」由 CreatureVisual 统一生成（见 creature_visual.gd）：
+## get_enemy_texture 仅做委托（含 world 世界风格与 frame 动画帧），贴图缓存也在 CreatureVisual 内。
 
-func get_enemy_texture(shape: String, col: Color) -> Texture2D:
-	var key = shape + "|" + col.to_html()
-	if _enemy_tex_cache.has(key):
-		return _enemy_tex_cache[key]
-	var S = _CIRC_TEX_SIZE
-	var img = Image.create(S, S, false, Image.FORMAT_RGBA8)
-	img.fill(Color(0, 0, 0, 0))
-	var dark = col.darkened(0.5)
-	var light = col.lightened(0.4)
-	var eye_w = Color(0.95, 0.92, 0.80, 1.0)
-	var pupil = Color(0.08, 0.06, 0.10, 1.0)
-	match shape:
-		"imp":     _shape_imp(img, col, dark, light, eye_w, pupil)
-		"fast":    _shape_fast(img, col, dark, light, eye_w, pupil)
-		"brute":   _shape_brute(img, col, dark, light, eye_w, pupil)
-		"wraith":  _shape_wraith(img, col, dark, light, eye_w, pupil)
-		"swift":   _shape_swift(img, col, dark, light, eye_w, pupil)
-		"elite":   _shape_elite(img, col, dark, light, eye_w, pupil)
-		"stone":   _shape_stone(img, col, dark, light, eye_w, pupil)
-		"corrode": _shape_corrode(img, col, dark, light, eye_w, pupil)
-		"boss":    _shape_boss(img, col, dark, light, eye_w, pupil)
-		_:         _shape_imp(img, col, dark, light, eye_w, pupil)
-	var tex = ImageTexture.create_from_image(img)
-	_enemy_tex_cache[key] = tex
-	return tex
-
-## ---- 像素基元（手写光栅化，Image 无 draw_* 原语）----
-func _set_px(img: Image, x: int, y: int, col: Color) -> void:
-	if x >= 0 and x < img.get_width() and y >= 0 and y < img.get_height():
-		img.set_pixel(x, y, col)
-
-func _fill_circle(img: Image, cx: float, cy: float, r: float, col: Color) -> void:
-	var r2 = r * r
-	for y in range(int(cy - r - 1), int(cy + r + 1) + 1):
-		for x in range(int(cx - r - 1), int(cx + r + 1) + 1):
-			var dx = x - cx; var dy = y - cy
-			if dx * dx + dy * dy <= r2:
-				_set_px(img, x, y, col)
-
-func _fill_ellipse(img: Image, cx: float, cy: float, rx: float, ry: float, col: Color) -> void:
-	for y in range(int(cy - ry - 1), int(cy + ry + 1) + 1):
-		for x in range(int(cx - rx - 1), int(cx + rx + 1) + 1):
-			var dx = (x - cx) / rx; var dy = (y - cy) / ry
-			if dx * dx + dy * dy <= 1.0:
-				_set_px(img, x, y, col)
-
-func _fill_roundrect(img: Image, x: float, y: float, w: float, h: float, rad: float, col: Color) -> void:
-	for yy in range(int(y), int(y + h) + 1):
-		for xx in range(int(x), int(x + w) + 1):
-			var nx = min(max(float(xx), x + rad), x + w - rad)
-			var ny = min(max(float(yy), y + rad), y + h - rad)
-			var dx = xx - nx; var dy = yy - ny
-			if dx * dx + dy * dy <= rad * rad:
-				_set_px(img, xx, yy, col)
-
-func _fill_tri(img: Image, p0: Vector2, p1: Vector2, p2: Vector2, col: Color) -> void:
-	var minx = int(min(p0.x, p1.x, p2.x)); var maxx = int(max(p0.x, p1.x, p2.x))
-	var miny = int(min(p0.y, p1.y, p2.y)); var maxy = int(max(p0.y, p1.y, p2.y))
-	for y in range(miny, maxy + 1):
-		for x in range(minx, maxx + 1):
-			var w0 = (x - p1.x) * (p2.y - p1.y) - (p2.x - p1.x) * (y - p1.y)
-			var w1 = (x - p2.x) * (p0.y - p2.y) - (p0.x - p2.x) * (y - p2.y)
-			var w2 = (x - p0.x) * (p1.y - p0.y) - (p1.x - p0.x) * (y - p0.y)
-			if (w0 >= 0 and w1 >= 0 and w2 >= 0) or (w0 <= 0 and w1 <= 0 and w2 <= 0):
-				_set_px(img, x, y, col)
-
-func _fill_poly(img: Image, pts: PackedVector2Array, col: Color) -> void:
-	var minx = 9999.0; var maxx = -9999.0; var miny = 9999.0; var maxy = -9999.0
-	for p in pts:
-		minx = min(minx, p.x); maxx = max(maxx, p.x)
-		miny = min(miny, p.y); maxy = max(maxy, p.y)
-	for y in range(int(miny), int(maxy) + 1):
-		for x in range(int(minx), int(maxx) + 1):
-			if _point_in_poly(float(x), float(y), pts):
-				_set_px(img, x, y, col)
-
-func _point_in_poly(x: float, y: float, pts: PackedVector2Array) -> bool:
-	var inside = false
-	var n = pts.size()
-	var j = n - 1
-	for i in range(n):
-		var pi = pts[i]; var pj = pts[j]
-		if (pi.y > y) != (pj.y > y):
-			var denom = pj.y - pi.y
-			if denom != 0.0 and x < (pj.x - pi.x) * (y - pi.y) / denom + pi.x:
-				inside = not inside
-		j = i
-	return inside
-
-## ---- 各 shape 的剪影构图（64×64 画布，中心约 32）----
-func _shape_imp(img, col, dark, light, eye_w, pupil):
-	_fill_circle(img, 32, 36, 23, dark)        # 描边
-	_fill_circle(img, 32, 35, 21, col)         # 身体
-	_fill_tri(img, Vector2(20,16), Vector2(26,16), Vector2(18,4), dark)   # 左角
-	_fill_tri(img, Vector2(44,16), Vector2(38,16), Vector2(46,4), dark)   # 右角
-	_fill_ellipse(img, 32, 42, 11, 9, light)  # 肚皮高光
-	_fill_circle(img, 25, 33, 4, eye_w); _fill_circle(img, 25, 33, 2, pupil)
-	_fill_circle(img, 39, 33, 4, eye_w); _fill_circle(img, 39, 33, 2, pupil)
-
-func _shape_fast(img, col, dark, light, eye_w, pupil):
-	_fill_ellipse(img, 32, 36, 13, 21, col)
-	_fill_tri(img, Vector2(24,46), Vector2(40,46), Vector2(32,60), dark)  # 尾
-	_fill_ellipse(img, 32, 28, 7, 4, light)
-	_fill_circle(img, 32, 26, 3, eye_w)
-
-func _shape_brute(img, col, dark, light, eye_w, pupil):
-	_fill_roundrect(img, 8, 16, 48, 40, 12, dark)
-	_fill_roundrect(img, 10, 18, 44, 36, 10, col)
-	_fill_roundrect(img, 14, 20, 36, 10, 6, light)
-	_fill_ellipse(img, 24, 34, 6, 3, pupil)
-	_fill_ellipse(img, 40, 34, 6, 3, pupil)
-
-func _shape_wraith(img, col, dark, light, eye_w, pupil):
-	_fill_circle(img, 32, 30, 20, col)
-	_fill_tri(img, Vector2(12,44), Vector2(22,44), Vector2(17,58), col)
-	_fill_tri(img, Vector2(22,44), Vector2(32,44), Vector2(27,58), col)
-	_fill_tri(img, Vector2(32,44), Vector2(42,44), Vector2(37,58), col)
-	_fill_tri(img, Vector2(42,44), Vector2(52,44), Vector2(47,58), col)
-	_fill_circle(img, 25, 28, 4, eye_w); _fill_circle(img, 25, 28, 2, pupil)
-	_fill_circle(img, 39, 28, 4, eye_w); _fill_circle(img, 39, 28, 2, pupil)
-
-func _shape_swift(img, col, dark, light, eye_w, pupil):
-	_fill_tri(img, Vector2(32,8), Vector2(14,52), Vector2(50,52), col)
-	_fill_tri(img, Vector2(32,14), Vector2(20,50), Vector2(44,50), dark)
-	_fill_circle(img, 32, 26, 3, eye_w)
-
-func _shape_elite(img, col, dark, light, eye_w, pupil):
-	_fill_circle(img, 32, 36, 19, dark)
-	_fill_circle(img, 32, 35, 17, col)
-	for i in range(8):
-		var a = float(i) / 8.0 * TAU
-		var bx = 32 + cos(a) * 17; var by = 35 + sin(a) * 17
-		var tx = 32 + cos(a) * 26; var ty = 35 + sin(a) * 26
-		var pa = a + 0.25; var pb = a - 0.25
-		_fill_tri(img, Vector2(bx,by), Vector2(32+cos(pa)*17, 35+sin(pa)*17), Vector2(tx,ty), dark)
-		_fill_tri(img, Vector2(bx,by), Vector2(32+cos(pb)*17, 35+sin(pb)*17), Vector2(tx,ty), dark)
-	_fill_circle(img, 26, 34, 4, eye_w); _fill_circle(img, 26, 34, 2, pupil)
-	_fill_circle(img, 38, 34, 4, eye_w); _fill_circle(img, 38, 34, 2, pupil)
-
-func _shape_stone(img, col, dark, light, eye_w, pupil):
-	var pts = PackedVector2Array(); var R = 26
-	for i in range(6):
-		var a = float(i) / 6.0 * TAU - PI / 2.0
-		pts.append(Vector2(32 + cos(a) * R, 34 + sin(a) * R))
-	_fill_poly(img, pts, dark)
-	var pts2 = PackedVector2Array()
-	for i in range(6):
-		var a = float(i) / 6.0 * TAU - PI / 2.0
-		pts2.append(Vector2(32 + cos(a) * (R - 3), 34 + sin(a) * (R - 3)))
-	_fill_poly(img, pts2, col)
-	_fill_poly(img, [Vector2(20,22), Vector2(34,20), Vector2(22,34)], light)
-	_fill_circle(img, 26, 34, 3, eye_w); _fill_circle(img, 38, 34, 3, eye_w)
-
-func _shape_corrode(img, col, dark, light, eye_w, pupil):
-	_fill_circle(img, 32, 34, 20, dark)
-	_fill_circle(img, 32, 34, 18, col)
-	for i in range(10):
-		var a = float(i) / 10.0 * TAU
-		var len = 24 + (i % 3) * 4
-		var bx = 32 + cos(a) * 18; var by = 34 + sin(a) * 18
-		var tx = 32 + cos(a) * len; var ty = 34 + sin(a) * len
-		var pa = a + 0.18; var pb = a - 0.18
-		_fill_tri(img, Vector2(bx,by), Vector2(32+cos(pa)*18, 34+sin(pa)*18), Vector2(tx,ty), dark)
-		_fill_tri(img, Vector2(bx,by), Vector2(32+cos(pb)*18, 34+sin(pb)*18), Vector2(tx,ty), dark)
-	_fill_circle(img, 26, 34, 4, light); _fill_circle(img, 26, 34, 2, pupil)
-	_fill_circle(img, 38, 34, 4, light); _fill_circle(img, 38, 34, 2, pupil)
-
-func _shape_boss(img, col, dark, light, eye_w, pupil):
-	_fill_tri(img, Vector2(18,18), Vector2(28,22), Vector2(14,2), dark)   # 左角
-	_fill_tri(img, Vector2(46,18), Vector2(36,22), Vector2(50,2), dark)   # 右角
-	_fill_circle(img, 32, 38, 26, dark)
-	_fill_circle(img, 32, 37, 24, col)
-	_fill_ellipse(img, 32, 44, 12, 9, light)
-	_fill_circle(img, 24, 34, 6, eye_w); _fill_circle(img, 24, 34, 3, Color(0.9,0.1,0.1,1))
-	_fill_circle(img, 40, 34, 6, eye_w); _fill_circle(img, 40, 34, 3, Color(0.9,0.1,0.1,1))
-	_fill_tri(img, Vector2(28,48), Vector2(34,48), Vector2(31,56), eye_w)  # 獠牙
-	_fill_tri(img, Vector2(34,48), Vector2(40,48), Vector2(37,56), eye_w)
+func get_enemy_texture(shape: String, col: Color, world: String = "", frame: int = 0) -> Texture2D:
+	# 怪物模型渲染已集中到 CreatureVisual（与玩家立绘统一管理，见 creature_visual.gd）
+	# world 参数让同一 shape 在三界呈现不同「边缘语言 + 母题」；frame 驱动走路/攻击动画帧
+	return CreatureVisual.get_enemy_texture(shape, col, world, frame)
 
 
 func draw_obstacles(node: CanvasItem) -> void:
@@ -590,30 +623,44 @@ func draw_obstacles(node: CanvasItem) -> void:
 		node.draw_rect(Rect2(c - Vector2(8, 8), Vector2(16, 16)), Color(0.6, 0.3, 0.5, 0.55), false, 2.0)
 
 func draw_enemies(node: CanvasItem) -> void:
-	# 按颜色贴图分组，连续绘制同类敌人 -> 触发 Godot 2D 自动合批（O(n) 绘制 -> ~颜色数）
+	# 按颜色贴图分组，连续绘制同类敌人 -> 触发 Godot 2D 自动合批（O(n) 绘制 -> ~贴图数）
+	# 动态模型：每实体按动画计时器选帧（走路 0/1 交替；攻击中切攻击帧 2 + 体型脉冲放大）
 	var groups = {}
 	for e in enemies:
 		if not e.alive:
 			continue
-		var tex = e.tex
+		var frame = 2 if e.attack_t > 0.0 else (int(e.anim_t * 4.0) % 2)
+		var tex = get_enemy_texture(e.shape, e.color, GameManager.map_id, frame)
 		if tex == null:
-			tex = get_enemy_texture(e.shape, e.color)
+			tex = e.tex
 		if not groups.has(tex):
 			groups[tex] = []
-		var s = e.size * 2.0
-		groups[tex].append(Rect2(e.pos.x - e.size, e.pos.y - e.size, s, s))
+		# 视觉放大 1.2x（保留命中判定 e.size 不变，仅观感变大）；攻击中轻微脉冲
+		var vs = e.size * 2.0 * 1.2
+		if e.attack_t > 0.0:
+			vs *= 1.0 + 0.12 * sin(e.anim_t * 30.0)
+		groups[tex].append(Rect2(e.pos.x - vs / 2.0, e.pos.y - vs / 2.0, vs, vs))
 	for tex in groups:
 		for r in groups[tex]:
 			node.draw_texture_rect(tex, r, false)
-	# 受击闪白：仅少数敌人短暂触发，直接用 draw_circle（成本低）
+	# 受击闪白：贴图整体提白（modulate）——不再是盖在模型上的白圆环
 	for e in enemies:
 		if e.alive and e.flash_t > 0.0:
-			node.draw_circle(e.pos, e.size, Color(1, 1, 1, e.flash_t))
-	# 暴击命中：短暂放大白圈（与闪白区分，提示暴击发生）
+			var frame = 2 if e.attack_t > 0.0 else (int(e.anim_t * 4.0) % 2)
+			var tex2 = get_enemy_texture(e.shape, e.color, GameManager.map_id, frame)
+			var vs2 = e.size * 2.0 * 1.2
+			node.draw_texture_rect(tex2, Rect2(e.pos.x - vs2 / 2.0, e.pos.y - vs2 / 2.0, vs2, vs2), false,
+				Color(1.0, 1.0, 1.0, min(0.85, e.flash_t * 7.0)))
+	# 护盾：带盾敌人画青色护盾环 + 护盾条（护盾穿透机制可视化）
 	for e in enemies:
-		if e.alive and e.crit_pop_t > 0.0:
-			var k = e.crit_pop_t / 0.18
-			node.draw_circle(e.pos, e.size * (1.0 + 0.4 * k), Color(1, 1, 1, 0.55 * k))
+		if e.alive and e.shield > 0.0:
+			node.draw_arc(e.pos, e.size + 5.0, 0, TAU, 26, Color(0.45, 0.85, 1.0, 0.55), 2.5)
+			var sw = max(30.0, e.size * 2.0)
+			var sr = clamp(e.shield / e.max_shield, 0.0, 1.0) if e.max_shield > 0.0 else 1.0
+			var by = e.pos.y - e.size - 13.0
+			node.draw_rect(Rect2(e.pos.x - sw / 2.0, by, sw, 3.0), Color(0.12, 0.30, 0.45, 0.85))
+			node.draw_rect(Rect2(e.pos.x - sw / 2.0, by, sw * sr, 3.0), Color(0.45, 0.85, 1.0, 0.95))
+
 	# Boss / 精英 血条
 	for e in enemies:
 		if e.alive and (e.boss or e.elite):
@@ -621,3 +668,64 @@ func draw_enemies(node: CanvasItem) -> void:
 			var ratio = clamp(e.hp / e.max_hp, 0.0, 1.0)
 			node.draw_rect(Rect2(e.pos.x - w / 2.0, e.pos.y - e.size - 8.0, w, 4.0), Color(0.2, 0.2, 0.2, 0.8))
 			node.draw_rect(Rect2(e.pos.x - w / 2.0, e.pos.y - e.size - 8.0, w * ratio, 4.0), Color(0.9, 0.2, 0.2, 0.9))
+
+	# 自爆怪爆炸特效（扩散光环，0.35s 内衰减）
+	for ex in explosions:
+		var k = 1.0 - ex.t / 0.35
+		if k <= 0.0:
+			continue
+		var rr = ex.r * (1.0 + (1.0 - k) * 0.25)
+		node.draw_circle(ex.pos, rr, Color(1.0, 0.55, 0.2, 0.18 * k))
+		node.draw_arc(ex.pos, rr, 0, TAU, 28, Color(1.0, 0.8, 0.3, 0.85 * k), 3.0)
+
+	# 打击特效（受击扩散环 + 火花；暴击=金色 + 更大）：0.25s 衰减
+	for he in hit_effects:
+		var k = 1.0 - he.t / 0.25
+		if k <= 0.0:
+			continue
+		var rr = (6.0 if not he.crit else 9.0) + (1.0 - k) * 15.0
+		var hcol = Color(1.0, 0.85, 0.35) if he.crit else Color(1.0, 1.0, 1.0)
+		node.draw_arc(he.pos, rr, 0, TAU, 18, Color(hcol.r, hcol.g, hcol.b, 0.7 * k), 2.0)
+		node.draw_circle(he.pos, rr * 0.4, Color(1.0, 1.0, 1.0, 0.22 * k))
+		var dd = he.dir
+		for i in range(3):
+			var sa = (i - 1.0) * 0.7 + he.t * 8.0
+			var sp = he.pos + dd.rotated(sa) * (rr + 4.0)
+			node.draw_line(he.pos, sp, Color(hcol.r, hcol.g, hcol.b, 0.55 * k), 1.5)
+
+	# 连锁闪电（质变 chain 特效）：锯齿折线逐段跳动；质变=青白，超质变=彩虹流转
+	var ltime = Time.get_ticks_msec() / 1000.0
+	for lz in lightning_fx:
+		var k = 1.0 - lz.t / 0.22
+		if k <= 0.0:
+			continue
+		var pts = lz.pts
+		for seg in range(pts.size() - 1):
+			var a = pts[seg]; var b = pts[seg + 1]
+			var dirv = (b - a).normalized()
+			var perp = dirv.orthogonal()
+			var mid = (a + b) * 0.5
+			var p0 = a + perp * sin(ltime * 37.0 + float(seg) * 2.3) * 3.0
+			var p1 = mid + perp * (5.0 + 6.0 * (0.5 + 0.5 * sin(ltime * 40.0 + float(seg) * 3.7)))
+			var p2 = b + perp * sin(ltime * 41.0 + float(seg) * 5.1) * 3.0
+			var zig = PackedVector2Array([p0, p1, p2])
+			var glow_col: Color
+			if lz.super:
+				glow_col = Color.from_hsv(fmod(ltime * 2.5 + float(seg) * 0.12, 1.0), 0.85, 1.0)
+			else:
+				glow_col = Color(0.35, 0.9, 1.0)
+			node.draw_polyline(zig, Color(glow_col.r, glow_col.g, glow_col.b, 0.35 * k), 7.0)
+			node.draw_polyline(zig, Color(glow_col.r, glow_col.g, glow_col.b, 0.95 * k), 2.5)
+			node.draw_circle(b, 3.0 * k + 1.0, Color(1.0, 1.0, 1.0, 0.9 * k))
+
+	# 怪物黑色词条：被强化的怪物描一圈暗紫光环（提示本局难度词条已生效）
+	if AffixManager.active_monster.size() > 0:
+		for e in enemies:
+			if e.alive:
+				node.draw_arc(e.pos, e.size + 3.0, 0, TAU, 24, Color(0.45, 0.12, 0.55, 0.5), 1.5)
+	# 状态指示：灼烧（橙）/ 冰冻（青）
+	for e in enemies:
+		if e.alive and e.burn_t > 0.0:
+			node.draw_arc(e.pos, e.size + 2.0, 0, TAU, 20, Color(1.0, 0.5, 0.15, 0.6), 1.5)
+		if e.alive and e.freeze_t > 0.0:
+			node.draw_arc(e.pos, e.size + 2.0, 0, TAU, 20, Color(0.4, 0.85, 1.0, 0.6), 1.5)

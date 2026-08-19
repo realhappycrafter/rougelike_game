@@ -12,6 +12,23 @@ const QUALITY = [
 	{"id":"red",    "name":"红", "color":"#ff4040", "mult":4.0,  "base":0.3}
 ]
 
+# ---- 武器槽位（2026-08-19 武器类型化）：主手 / 副手 / 光环 / 环绕 ----
+# 同一槽位互斥：已拥有任一该槽位武器后，三选一 / 商店 / 宝箱不再给同槽位新武器。
+const SLOT_NAMES = {"main":"主手", "off":"副手", "aura":"光环", "orbit":"环绕"}
+
+static func slot_name(slot: String) -> String:
+	return SLOT_NAMES.get(slot, slot)
+
+## 玩家是否已拥有某槽位的武器（用于槽位互斥过滤）
+static func slot_owned(player, slot: String) -> bool:
+	if slot == "":
+		return false
+	for wid in player.weapons.keys():
+		var wd = DataTables.weapons.get(wid, {})
+		if str(wd.get("slot", "")) == slot:
+			return true
+	return false
+
 func quality_mult(id: String) -> float:
 	for q in QUALITY:
 		if q.id == id:
@@ -57,6 +74,7 @@ func _passive_desc(p: Dictionary, qmult: float) -> String:
 		"crit":     return "暴击率 +%d%%" % int(v * 100)
 		"crit_damage": return "暴击伤害 +%d%%" % int(v * 100)
 		"lifesteal": return "吸血 +%d%%" % int(v * 100)
+		"shield_pen": return "护盾穿透 +%d%%" % int(v * 100)
 	return p.desc
 
 func generate(player) -> Array:
@@ -70,6 +88,11 @@ func generate(player) -> Array:
 		var wdata = DataTables.weapons[wid]
 		var maps_allowed = wdata.get("maps", [])
 		if maps_allowed.size() > 0 and not maps_allowed.has(GameManager.map_id):
+			continue
+		# 职业过滤：带 class 的专属武器仅对对应职业开放（无职业/未带 class 的武器对所有人开放）。
+		# 满足需求：三选一时不出现其他职业的武器词条。
+		var wclass = str(wdata.get("class", ""))
+		if wclass != "" and wclass != GameManager.player_class:
 			continue
 		if held_weapons.has(wid):
 			var lv = player.weapons[wid].level
@@ -85,10 +108,14 @@ func generate(player) -> Array:
 					"weight": 2, "quality": null, "quality_color": null
 				})
 		else:
+			# 槽位互斥：同槽位（主手/副手/光环/环绕）已拥有任意一把，则不再给该槽位新武器
+			var wslot = str(wdata.get("slot", ""))
+			if wslot != "" and slot_owned(player, wslot):
+				continue
 			opts.append({
 				"type": "weapon", "id": wid,
-				"name": DataTables.weapons[wid].name,
-				"desc": "新武器：" + DataTables.weapons[wid].name,
+				"name": wdata.name,
+				"desc": "新武器【%s】：%s" % [slot_name(wslot), DataTables.weapons[wid].name],
 				"weight": 3, "quality": null, "quality_color": null
 			})
 
@@ -191,6 +218,10 @@ func generate(player) -> Array:
 				break
 			chosen.append(s)
 
+	# 质变/超质变：每槽位 0.5% × 幸运 概率替换为一个可获取的质变/超质变
+	# （仅三选一升级与商店刷新中出现，符合用户需求；受幸运加成影响）
+	_inject_affixes(chosen, player)
+
 	# 去掉内部 weight 字段，避免 UI 显示
 	for c in chosen:
 		c.erase("weight")
@@ -208,7 +239,8 @@ func _fallback_growth() -> Array:
 		{"type":"stat","stat":"luck","amount":1.0,"name":"属性成长·幸运","desc":"幸运 +1（持续成长）","weight":0,"quality":null,"quality_color":null},
 		{"type":"stat","stat":"crit","amount":0.03,"name":"属性成长·暴击","desc":"暴击率 +3%（持续成长）","weight":0,"quality":null,"quality_color":null},
 		{"type":"stat","stat":"crit_dmg","amount":0.08,"name":"属性成长·暴伤","desc":"暴击伤害 +8%（持续成长）","weight":0,"quality":null,"quality_color":null},
-		{"type":"stat","stat":"lifesteal","amount":0.03,"name":"属性成长·吸血","desc":"吸血 +3%（持续成长）","weight":0,"quality":null,"quality_color":null}
+		{"type":"stat","stat":"lifesteal","amount":0.03,"name":"属性成长·吸血","desc":"吸血 +3%（持续成长）","weight":0,"quality":null,"quality_color":null},
+		{"type":"stat","stat":"shield_pen","amount":0.03,"name":"属性成长·破盾","desc":"护盾穿透 +3%（持续成长）","weight":0,"quality":null,"quality_color":null}
 	]
 
 ## 全部升级满级后的兜底选项：三档金币宝箱，保证升级始终有三选一
@@ -218,3 +250,22 @@ func _fallback_treasures() -> Array:
 		{"type":"treasure","id":"gold_m","name":"金币宝箱（中）","desc":"立即获得 180 金币","weight":0,"quality":null,"quality_color":null,"amount":180},
 		{"type":"treasure","id":"gold_l","name":"金币宝箱（大）","desc":"立即获得 450 金币","weight":0,"quality":null,"quality_color":null,"amount":450}
 	]
+
+## 把可获取的质变/超质变按概率注入三选一（每槽位独立判定）
+## 概率 = AffixManager.pick_chance(luck) = 0.005 × (1 + 幸运×0.06)；Boss 红色奖励槽不被替换。
+func _inject_affixes(chosen: Array, player) -> void:
+	if AffixManager == null:
+		return
+	var muts = AffixManager.collect_mutation_options(player)
+	var sups = AffixManager.collect_super_options(player)
+	var all = muts + sups
+	if all.is_empty():
+		return
+	var chance = AffixManager.pick_chance(player.luck)
+	randomize()
+	for i in range(chosen.size()):
+		var o = chosen[i]
+		if o.get("forced_red", false):
+			continue
+		if randf() < chance:
+			chosen[i] = all[randi() % all.size()]

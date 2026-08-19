@@ -37,6 +37,7 @@ var meta_exp_mult = 1.0
 var red_reward_queued = false
 
 var player = null          # 玩家实体引用（由 main 注入）
+var player_class = ""       # 当前职业 id（空=无职业）；决定三选一武器池与专属武器。由菜单职业选择设置。
 
 # ---- 联机状态（零成本方案：WebSocket 中继 + host 权威）----
 enum NetMode { SOLO, HOST, GUEST }
@@ -80,6 +81,10 @@ func set_map(id: String) -> void:
 	map_id = id
 	current_map = DataTables.maps[id]
 	compute_meta_multipliers()
+
+## 设置当前职业（由菜单职业选择面板调用）。空串表示无职业。
+func set_player_class(id: String) -> void:
+	player_class = id
 
 ## 由 meta_upgrades 的 gold_gain / exp_gain 推导全局乘数
 func compute_meta_multipliers() -> void:

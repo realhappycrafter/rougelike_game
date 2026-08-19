@@ -1,0 +1,1797 @@
+{
+  "knife_mut": {
+    "id": "knife_mut",
+    "name": "飞刀·质变",
+    "tier": "mutation",
+    "category": "weapon",
+    "require_weapon": "knife",
+    "require_affix": null,
+    "color": [
+      0.297,
+      0.896,
+      0.943
+    ],
+    "desc": "【质变】飞刀获得「爆炸冲击」：伤害/效能提升，并附加爆炸冲击特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.15
+      },
+      {
+        "kind": "wflag",
+        "flag": "explode",
+        "value": 1.0
+      }
+    ],
+    "visual": {
+      "shape": "s0",
+      "super": false
+    }
+  },
+  "knife_sup": {
+    "id": "knife_sup",
+    "name": "飞刀·超质变",
+    "tier": "super",
+    "category": "weapon",
+    "require_weapon": "knife",
+    "require_affix": "knife_mut",
+    "color": [
+      0.979,
+      0.181,
+      0.181
+    ],
+    "desc": "【超质变】飞刀突破极限：大幅强化并叠加「爆炸冲击」与「破盾重击」双重特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wstat",
+        "stat": "projectile_speed_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wflag",
+        "flag": "explode",
+        "value": 1.5
+      },
+      {
+        "kind": "wflag",
+        "flag": "shield_break",
+        "value": 1.5
+      }
+    ],
+    "visual": {
+      "shape": "s0",
+      "super": true
+    }
+  },
+  "magic_wand_mut": {
+    "id": "magic_wand_mut",
+    "name": "魔杖·质变",
+    "tier": "mutation",
+    "category": "weapon",
+    "require_weapon": "magic_wand",
+    "require_affix": null,
+    "color": [
+      0.297,
+      0.881,
+      0.943
+    ],
+    "desc": "【质变】魔杖获得「连锁闪电」：伤害/效能提升，并附加连锁闪电特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.15
+      },
+      {
+        "kind": "wflag",
+        "flag": "chain",
+        "value": 1.0
+      }
+    ],
+    "visual": {
+      "shape": "s1",
+      "super": false
+    }
+  },
+  "magic_wand_sup": {
+    "id": "magic_wand_sup",
+    "name": "魔杖·超质变",
+    "tier": "super",
+    "category": "weapon",
+    "require_weapon": "magic_wand",
+    "require_affix": "magic_wand_mut",
+    "color": [
+      0.979,
+      0.38,
+      0.181
+    ],
+    "desc": "【超质变】魔杖突破极限：大幅强化并叠加「连锁闪电」与「贯穿无双」双重特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wstat",
+        "stat": "projectile_speed_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wflag",
+        "flag": "chain",
+        "value": 1.5
+      },
+      {
+        "kind": "wflag",
+        "flag": "pierce_all",
+        "value": 1.5
+      }
+    ],
+    "visual": {
+      "shape": "s1",
+      "super": true
+    }
+  },
+  "garlic_mut": {
+    "id": "garlic_mut",
+    "name": "大蒜·质变",
+    "tier": "mutation",
+    "category": "weapon",
+    "require_weapon": "garlic",
+    "require_affix": null,
+    "color": [
+      0.297,
+      0.865,
+      0.943
+    ],
+    "desc": "【质变】大蒜获得「灼烧持续」：伤害/效能提升，并附加灼烧持续特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "area_mult",
+        "value": 0.25
+      },
+      {
+        "kind": "wflag",
+        "flag": "burn",
+        "value": 1.0
+      }
+    ],
+    "visual": {
+      "shape": "s2",
+      "super": false
+    }
+  },
+  "garlic_sup": {
+    "id": "garlic_sup",
+    "name": "大蒜·超质变",
+    "tier": "super",
+    "category": "weapon",
+    "require_weapon": "garlic",
+    "require_affix": "garlic_mut",
+    "color": [
+      0.979,
+      0.58,
+      0.181
+    ],
+    "desc": "【超质变】大蒜突破极限：大幅强化并叠加「灼烧持续」与「分叉裂变」双重特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wstat",
+        "stat": "area_mult",
+        "value": 0.35
+      },
+      {
+        "kind": "wflag",
+        "flag": "burn",
+        "value": 1.5
+      },
+      {
+        "kind": "wflag",
+        "flag": "split",
+        "value": 1.5
+      }
+    ],
+    "visual": {
+      "shape": "s2",
+      "super": true
+    }
+  },
+  "bible_mut": {
+    "id": "bible_mut",
+    "name": "圣经·质变",
+    "tier": "mutation",
+    "category": "weapon",
+    "require_weapon": "bible",
+    "require_affix": null,
+    "color": [
+      0.297,
+      0.85,
+      0.943
+    ],
+    "desc": "【质变】圣经获得「冰霜减速」：伤害/效能提升，并附加冰霜减速特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "count_add",
+        "value": 1
+      },
+      {
+        "kind": "wflag",
+        "flag": "freeze",
+        "value": 1.0
+      }
+    ],
+    "visual": {
+      "shape": "s3",
+      "super": false
+    }
+  },
+  "bible_sup": {
+    "id": "bible_sup",
+    "name": "圣经·超质变",
+    "tier": "super",
+    "category": "weapon",
+    "require_weapon": "bible",
+    "require_affix": "bible_mut",
+    "color": [
+      0.979,
+      0.779,
+      0.181
+    ],
+    "desc": "【超质变】圣经突破极限：大幅强化并叠加「冰霜减速」与「暴戾增幅」双重特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wstat",
+        "stat": "area_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wflag",
+        "flag": "freeze",
+        "value": 1.5
+      },
+      {
+        "kind": "wflag",
+        "flag": "crit_up",
+        "value": 1.5
+      }
+    ],
+    "visual": {
+      "shape": "s3",
+      "super": true
+    }
+  },
+  "whip_mut": {
+    "id": "whip_mut",
+    "name": "鞭子·质变",
+    "tier": "mutation",
+    "category": "weapon",
+    "require_weapon": "whip",
+    "require_affix": null,
+    "color": [
+      0.297,
+      0.834,
+      0.943
+    ],
+    "desc": "【质变】鞭子获得「吸血命中」：伤害/效能提升，并附加吸血命中特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "count_add",
+        "value": 1
+      },
+      {
+        "kind": "wflag",
+        "flag": "lifesteal_hit",
+        "value": 1.0
+      }
+    ],
+    "visual": {
+      "shape": "s4",
+      "super": false
+    }
+  },
+  "whip_sup": {
+    "id": "whip_sup",
+    "name": "鞭子·超质变",
+    "tier": "super",
+    "category": "weapon",
+    "require_weapon": "whip",
+    "require_affix": "whip_mut",
+    "color": [
+      0.979,
+      0.979,
+      0.181
+    ],
+    "desc": "【超质变】鞭子突破极限：大幅强化并叠加「吸血命中」与「崩裂击退」双重特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wstat",
+        "stat": "area_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wflag",
+        "flag": "lifesteal_hit",
+        "value": 1.5
+      },
+      {
+        "kind": "wflag",
+        "flag": "knockback_up",
+        "value": 1.5
+      }
+    ],
+    "visual": {
+      "shape": "s4",
+      "super": true
+    }
+  },
+  "dlu_bluesilver_mut": {
+    "id": "dlu_bluesilver_mut",
+    "name": "青纹藤·质变",
+    "tier": "mutation",
+    "category": "weapon",
+    "require_weapon": "dlu_bluesilver",
+    "require_affix": null,
+    "color": [
+      0.297,
+      0.819,
+      0.943
+    ],
+    "desc": "【质变】青纹藤获得「点金夺财」：伤害/效能提升，并附加点金夺财特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "area_mult",
+        "value": 0.25
+      },
+      {
+        "kind": "wflag",
+        "flag": "gold_on_hit",
+        "value": 1.0
+      }
+    ],
+    "visual": {
+      "shape": "s5",
+      "super": false
+    }
+  },
+  "dlu_bluesilver_sup": {
+    "id": "dlu_bluesilver_sup",
+    "name": "青纹藤·超质变",
+    "tier": "super",
+    "category": "weapon",
+    "require_weapon": "dlu_bluesilver",
+    "require_affix": "dlu_bluesilver_mut",
+    "color": [
+      0.779,
+      0.979,
+      0.181
+    ],
+    "desc": "【超质变】青纹藤突破极限：大幅强化并叠加「点金夺财」与「环刃风暴」双重特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wstat",
+        "stat": "area_mult",
+        "value": 0.35
+      },
+      {
+        "kind": "wflag",
+        "flag": "gold_on_hit",
+        "value": 1.5
+      },
+      {
+        "kind": "wflag",
+        "flag": "orbit_storm",
+        "value": 1.5
+      }
+    ],
+    "visual": {
+      "shape": "s5",
+      "super": true
+    }
+  },
+  "dlu_hammer_mut": {
+    "id": "dlu_hammer_mut",
+    "name": "裂地锤·质变",
+    "tier": "mutation",
+    "category": "weapon",
+    "require_weapon": "dlu_hammer",
+    "require_affix": null,
+    "color": [
+      0.297,
+      0.803,
+      0.943
+    ],
+    "desc": "【质变】裂地锤获得「破盾重击」：伤害/效能提升，并附加破盾重击特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "count_add",
+        "value": 1
+      },
+      {
+        "kind": "wflag",
+        "flag": "shield_break",
+        "value": 1.0
+      }
+    ],
+    "visual": {
+      "shape": "s6",
+      "super": false
+    }
+  },
+  "dlu_hammer_sup": {
+    "id": "dlu_hammer_sup",
+    "name": "裂地锤·超质变",
+    "tier": "super",
+    "category": "weapon",
+    "require_weapon": "dlu_hammer",
+    "require_affix": "dlu_hammer_mut",
+    "color": [
+      0.58,
+      0.979,
+      0.181
+    ],
+    "desc": "【超质变】裂地锤突破极限：大幅强化并叠加「破盾重击」与「爆炸冲击」双重特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wstat",
+        "stat": "area_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wflag",
+        "flag": "shield_break",
+        "value": 1.5
+      },
+      {
+        "kind": "wflag",
+        "flag": "explode",
+        "value": 1.5
+      }
+    ],
+    "visual": {
+      "shape": "s6",
+      "super": true
+    }
+  },
+  "dlu_tower_mut": {
+    "id": "dlu_tower_mut",
+    "name": "灵光宝塔·质变",
+    "tier": "mutation",
+    "category": "weapon",
+    "require_weapon": "dlu_tower",
+    "require_affix": null,
+    "color": [
+      0.297,
+      0.788,
+      0.943
+    ],
+    "desc": "【质变】灵光宝塔获得「贯穿无双」：伤害/效能提升，并附加贯穿无双特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "area_mult",
+        "value": 0.25
+      },
+      {
+        "kind": "wflag",
+        "flag": "pierce_all",
+        "value": 1.0
+      }
+    ],
+    "visual": {
+      "shape": "s7",
+      "super": false
+    }
+  },
+  "dlu_tower_sup": {
+    "id": "dlu_tower_sup",
+    "name": "灵光宝塔·超质变",
+    "tier": "super",
+    "category": "weapon",
+    "require_weapon": "dlu_tower",
+    "require_affix": "dlu_tower_mut",
+    "color": [
+      0.38,
+      0.979,
+      0.181
+    ],
+    "desc": "【超质变】灵光宝塔突破极限：大幅强化并叠加「贯穿无双」与「连锁闪电」双重特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wstat",
+        "stat": "area_mult",
+        "value": 0.35
+      },
+      {
+        "kind": "wflag",
+        "flag": "pierce_all",
+        "value": 1.5
+      },
+      {
+        "kind": "wflag",
+        "flag": "chain",
+        "value": 1.5
+      }
+    ],
+    "visual": {
+      "shape": "s7",
+      "super": true
+    }
+  },
+  "dlu_phoenix_mut": {
+    "id": "dlu_phoenix_mut",
+    "name": "炽羽火线·质变",
+    "tier": "mutation",
+    "category": "weapon",
+    "require_weapon": "dlu_phoenix",
+    "require_affix": null,
+    "color": [
+      0.297,
+      0.772,
+      0.943
+    ],
+    "desc": "【质变】炽羽火线获得「分叉裂变」：伤害/效能提升，并附加分叉裂变特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.15
+      },
+      {
+        "kind": "wflag",
+        "flag": "split",
+        "value": 1.0
+      }
+    ],
+    "visual": {
+      "shape": "s8",
+      "super": false
+    }
+  },
+  "dlu_phoenix_sup": {
+    "id": "dlu_phoenix_sup",
+    "name": "炽羽火线·超质变",
+    "tier": "super",
+    "category": "weapon",
+    "require_weapon": "dlu_phoenix",
+    "require_affix": "dlu_phoenix_mut",
+    "color": [
+      0.181,
+      0.979,
+      0.181
+    ],
+    "desc": "【超质变】炽羽火线突破极限：大幅强化并叠加「分叉裂变」与「灼烧持续」双重特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wstat",
+        "stat": "projectile_speed_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wflag",
+        "flag": "split",
+        "value": 1.5
+      },
+      {
+        "kind": "wflag",
+        "flag": "burn",
+        "value": 1.5
+      }
+    ],
+    "visual": {
+      "shape": "s8",
+      "super": true
+    }
+  },
+  "dlu_crossbow_mut": {
+    "id": "dlu_crossbow_mut",
+    "name": "连珠弩·质变",
+    "tier": "mutation",
+    "category": "weapon",
+    "require_weapon": "dlu_crossbow",
+    "require_affix": null,
+    "color": [
+      0.297,
+      0.757,
+      0.943
+    ],
+    "desc": "【质变】连珠弩获得「暴戾增幅」：伤害/效能提升，并附加暴戾增幅特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.15
+      },
+      {
+        "kind": "wflag",
+        "flag": "crit_up",
+        "value": 1.0
+      }
+    ],
+    "visual": {
+      "shape": "s9",
+      "super": false
+    }
+  },
+  "dlu_crossbow_sup": {
+    "id": "dlu_crossbow_sup",
+    "name": "连珠弩·超质变",
+    "tier": "super",
+    "category": "weapon",
+    "require_weapon": "dlu_crossbow",
+    "require_affix": "dlu_crossbow_mut",
+    "color": [
+      0.181,
+      0.979,
+      0.381
+    ],
+    "desc": "【超质变】连珠弩突破极限：大幅强化并叠加「暴戾增幅」与「冰霜减速」双重特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wstat",
+        "stat": "projectile_speed_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wflag",
+        "flag": "crit_up",
+        "value": 1.5
+      },
+      {
+        "kind": "wflag",
+        "flag": "freeze",
+        "value": 1.5
+      }
+    ],
+    "visual": {
+      "shape": "s9",
+      "super": true
+    }
+  },
+  "dlu_rabbit_mut": {
+    "id": "dlu_rabbit_mut",
+    "name": "月影兔·质变",
+    "tier": "mutation",
+    "category": "weapon",
+    "require_weapon": "dlu_rabbit",
+    "require_affix": null,
+    "color": [
+      0.297,
+      0.741,
+      0.943
+    ],
+    "desc": "【质变】月影兔获得「崩裂击退」：伤害/效能提升，并附加崩裂击退特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "count_add",
+        "value": 1
+      },
+      {
+        "kind": "wflag",
+        "flag": "knockback_up",
+        "value": 1.0
+      }
+    ],
+    "visual": {
+      "shape": "s10",
+      "super": false
+    }
+  },
+  "dlu_rabbit_sup": {
+    "id": "dlu_rabbit_sup",
+    "name": "月影兔·超质变",
+    "tier": "super",
+    "category": "weapon",
+    "require_weapon": "dlu_rabbit",
+    "require_affix": "dlu_rabbit_mut",
+    "color": [
+      0.181,
+      0.979,
+      0.58
+    ],
+    "desc": "【超质变】月影兔突破极限：大幅强化并叠加「崩裂击退」与「吸血命中」双重特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wstat",
+        "stat": "area_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wflag",
+        "flag": "knockback_up",
+        "value": 1.5
+      },
+      {
+        "kind": "wflag",
+        "flag": "lifesteal_hit",
+        "value": 1.5
+      }
+    ],
+    "visual": {
+      "shape": "s10",
+      "super": true
+    }
+  },
+  "xx_sword_mut": {
+    "id": "xx_sword_mut",
+    "name": "本命飞剑·质变",
+    "tier": "mutation",
+    "category": "weapon",
+    "require_weapon": "xx_sword",
+    "require_affix": null,
+    "color": [
+      0.297,
+      0.726,
+      0.943
+    ],
+    "desc": "【质变】本命飞剑获得「环刃风暴」：伤害/效能提升，并附加环刃风暴特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.15
+      },
+      {
+        "kind": "wflag",
+        "flag": "orbit_storm",
+        "value": 1.0
+      }
+    ],
+    "visual": {
+      "shape": "s11",
+      "super": false
+    }
+  },
+  "xx_sword_sup": {
+    "id": "xx_sword_sup",
+    "name": "本命飞剑·超质变",
+    "tier": "super",
+    "category": "weapon",
+    "require_weapon": "xx_sword",
+    "require_affix": "xx_sword_mut",
+    "color": [
+      0.181,
+      0.979,
+      0.779
+    ],
+    "desc": "【超质变】本命飞剑突破极限：大幅强化并叠加「环刃风暴」与「点金夺财」双重特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wstat",
+        "stat": "projectile_speed_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wflag",
+        "flag": "orbit_storm",
+        "value": 1.5
+      },
+      {
+        "kind": "wflag",
+        "flag": "gold_on_hit",
+        "value": 1.5
+      }
+    ],
+    "visual": {
+      "shape": "s11",
+      "super": true
+    }
+  },
+  "xx_treasure_mut": {
+    "id": "xx_treasure_mut",
+    "name": "法宝环绕·质变",
+    "tier": "mutation",
+    "category": "weapon",
+    "require_weapon": "xx_treasure",
+    "require_affix": null,
+    "color": [
+      0.297,
+      0.71,
+      0.943
+    ],
+    "desc": "【质变】法宝环绕获得「爆炸冲击」：伤害/效能提升，并附加爆炸冲击特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "count_add",
+        "value": 1
+      },
+      {
+        "kind": "wflag",
+        "flag": "explode",
+        "value": 1.0
+      }
+    ],
+    "visual": {
+      "shape": "s12",
+      "super": false
+    }
+  },
+  "xx_treasure_sup": {
+    "id": "xx_treasure_sup",
+    "name": "法宝环绕·超质变",
+    "tier": "super",
+    "category": "weapon",
+    "require_weapon": "xx_treasure",
+    "require_affix": "xx_treasure_mut",
+    "color": [
+      0.181,
+      0.979,
+      0.979
+    ],
+    "desc": "【超质变】法宝环绕突破极限：大幅强化并叠加「爆炸冲击」与「破盾重击」双重特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wstat",
+        "stat": "area_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wflag",
+        "flag": "explode",
+        "value": 1.5
+      },
+      {
+        "kind": "wflag",
+        "flag": "shield_break",
+        "value": 1.5
+      }
+    ],
+    "visual": {
+      "shape": "s12",
+      "super": true
+    }
+  },
+  "xx_talisman_mut": {
+    "id": "xx_talisman_mut",
+    "name": "符箓大阵·质变",
+    "tier": "mutation",
+    "category": "weapon",
+    "require_weapon": "xx_talisman",
+    "require_affix": null,
+    "color": [
+      0.297,
+      0.695,
+      0.943
+    ],
+    "desc": "【质变】符箓大阵获得「连锁闪电」：伤害/效能提升，并附加连锁闪电特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "area_mult",
+        "value": 0.25
+      },
+      {
+        "kind": "wflag",
+        "flag": "chain",
+        "value": 1.0
+      }
+    ],
+    "visual": {
+      "shape": "s13",
+      "super": false
+    }
+  },
+  "xx_talisman_sup": {
+    "id": "xx_talisman_sup",
+    "name": "符箓大阵·超质变",
+    "tier": "super",
+    "category": "weapon",
+    "require_weapon": "xx_talisman",
+    "require_affix": "xx_talisman_mut",
+    "color": [
+      0.181,
+      0.779,
+      0.979
+    ],
+    "desc": "【超质变】符箓大阵突破极限：大幅强化并叠加「连锁闪电」与「贯穿无双」双重特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wstat",
+        "stat": "area_mult",
+        "value": 0.35
+      },
+      {
+        "kind": "wflag",
+        "flag": "chain",
+        "value": 1.5
+      },
+      {
+        "kind": "wflag",
+        "flag": "pierce_all",
+        "value": 1.5
+      }
+    ],
+    "visual": {
+      "shape": "s13",
+      "super": true
+    }
+  },
+  "xx_thunder_mut": {
+    "id": "xx_thunder_mut",
+    "name": "雷法·质变",
+    "tier": "mutation",
+    "category": "weapon",
+    "require_weapon": "xx_thunder",
+    "require_affix": null,
+    "color": [
+      0.297,
+      0.679,
+      0.943
+    ],
+    "desc": "【质变】雷法获得「灼烧持续」：伤害/效能提升，并附加灼烧持续特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.15
+      },
+      {
+        "kind": "wflag",
+        "flag": "burn",
+        "value": 1.0
+      }
+    ],
+    "visual": {
+      "shape": "s14",
+      "super": false
+    }
+  },
+  "xx_thunder_sup": {
+    "id": "xx_thunder_sup",
+    "name": "雷法·超质变",
+    "tier": "super",
+    "category": "weapon",
+    "require_weapon": "xx_thunder",
+    "require_affix": "xx_thunder_mut",
+    "color": [
+      0.181,
+      0.58,
+      0.979
+    ],
+    "desc": "【超质变】雷法突破极限：大幅强化并叠加「灼烧持续」与「分叉裂变」双重特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wstat",
+        "stat": "projectile_speed_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wflag",
+        "flag": "burn",
+        "value": 1.5
+      },
+      {
+        "kind": "wflag",
+        "flag": "split",
+        "value": 1.5
+      }
+    ],
+    "visual": {
+      "shape": "s14",
+      "super": true
+    }
+  },
+  "xx_shanshui_mut": {
+    "id": "xx_shanshui_mut",
+    "name": "山河社稷图·质变",
+    "tier": "mutation",
+    "category": "weapon",
+    "require_weapon": "xx_shanshui",
+    "require_affix": null,
+    "color": [
+      0.297,
+      0.664,
+      0.943
+    ],
+    "desc": "【质变】山河社稷图获得「冰霜减速」：伤害/效能提升，并附加冰霜减速特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "area_mult",
+        "value": 0.25
+      },
+      {
+        "kind": "wflag",
+        "flag": "freeze",
+        "value": 1.0
+      }
+    ],
+    "visual": {
+      "shape": "s15",
+      "super": false
+    }
+  },
+  "xx_shanshui_sup": {
+    "id": "xx_shanshui_sup",
+    "name": "山河社稷图·超质变",
+    "tier": "super",
+    "category": "weapon",
+    "require_weapon": "xx_shanshui",
+    "require_affix": "xx_shanshui_mut",
+    "color": [
+      0.181,
+      0.38,
+      0.979
+    ],
+    "desc": "【超质变】山河社稷图突破极限：大幅强化并叠加「冰霜减速」与「暴戾增幅」双重特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wstat",
+        "stat": "area_mult",
+        "value": 0.35
+      },
+      {
+        "kind": "wflag",
+        "flag": "freeze",
+        "value": 1.5
+      },
+      {
+        "kind": "wflag",
+        "flag": "crit_up",
+        "value": 1.5
+      }
+    ],
+    "visual": {
+      "shape": "s15",
+      "super": true
+    }
+  },
+  "xx_swordarray_mut": {
+    "id": "xx_swordarray_mut",
+    "name": "剑阵·质变",
+    "tier": "mutation",
+    "category": "weapon",
+    "require_weapon": "xx_swordarray",
+    "require_affix": null,
+    "color": [
+      0.297,
+      0.648,
+      0.943
+    ],
+    "desc": "【质变】剑阵获得「吸血命中」：伤害/效能提升，并附加吸血命中特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "count_add",
+        "value": 1
+      },
+      {
+        "kind": "wflag",
+        "flag": "lifesteal_hit",
+        "value": 1.0
+      }
+    ],
+    "visual": {
+      "shape": "s0",
+      "super": false
+    }
+  },
+  "xx_swordarray_sup": {
+    "id": "xx_swordarray_sup",
+    "name": "剑阵·超质变",
+    "tier": "super",
+    "category": "weapon",
+    "require_weapon": "xx_swordarray",
+    "require_affix": "xx_swordarray_mut",
+    "color": [
+      0.181,
+      0.181,
+      0.979
+    ],
+    "desc": "【超质变】剑阵突破极限：大幅强化并叠加「吸血命中」与「崩裂击退」双重特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wstat",
+        "stat": "area_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wflag",
+        "flag": "lifesteal_hit",
+        "value": 1.5
+      },
+      {
+        "kind": "wflag",
+        "flag": "knockback_up",
+        "value": 1.5
+      }
+    ],
+    "visual": {
+      "shape": "s0",
+      "super": true
+    }
+  },
+  "greatsword_mut": {
+    "id": "greatsword_mut",
+    "name": "巨剑·质变",
+    "tier": "mutation",
+    "category": "weapon",
+    "require_weapon": "greatsword",
+    "require_affix": null,
+    "color": [
+      0.297,
+      0.633,
+      0.943
+    ],
+    "desc": "【质变】巨剑获得「点金夺财」：伤害/效能提升，并附加点金夺财特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "count_add",
+        "value": 1
+      },
+      {
+        "kind": "wflag",
+        "flag": "gold_on_hit",
+        "value": 1.0
+      }
+    ],
+    "visual": {
+      "shape": "s1",
+      "super": false
+    }
+  },
+  "greatsword_sup": {
+    "id": "greatsword_sup",
+    "name": "巨剑·超质变",
+    "tier": "super",
+    "category": "weapon",
+    "require_weapon": "greatsword",
+    "require_affix": "greatsword_mut",
+    "color": [
+      0.381,
+      0.181,
+      0.979
+    ],
+    "desc": "【超质变】巨剑突破极限：大幅强化并叠加「点金夺财」与「环刃风暴」双重特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wstat",
+        "stat": "area_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wflag",
+        "flag": "gold_on_hit",
+        "value": 1.5
+      },
+      {
+        "kind": "wflag",
+        "flag": "orbit_storm",
+        "value": 1.5
+      }
+    ],
+    "visual": {
+      "shape": "s1",
+      "super": true
+    }
+  },
+  "bowshot_mut": {
+    "id": "bowshot_mut",
+    "name": "穿云箭·质变",
+    "tier": "mutation",
+    "category": "weapon",
+    "require_weapon": "bowshot",
+    "require_affix": null,
+    "color": [
+      0.297,
+      0.617,
+      0.943
+    ],
+    "desc": "【质变】穿云箭获得「破盾重击」：伤害/效能提升，并附加破盾重击特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.15
+      },
+      {
+        "kind": "wflag",
+        "flag": "shield_break",
+        "value": 1.0
+      }
+    ],
+    "visual": {
+      "shape": "s2",
+      "super": false
+    }
+  },
+  "bowshot_sup": {
+    "id": "bowshot_sup",
+    "name": "穿云箭·超质变",
+    "tier": "super",
+    "category": "weapon",
+    "require_weapon": "bowshot",
+    "require_affix": "bowshot_mut",
+    "color": [
+      0.58,
+      0.181,
+      0.979
+    ],
+    "desc": "【超质变】穿云箭突破极限：大幅强化并叠加「破盾重击」与「爆炸冲击」双重特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wstat",
+        "stat": "projectile_speed_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wflag",
+        "flag": "shield_break",
+        "value": 1.5
+      },
+      {
+        "kind": "wflag",
+        "flag": "explode",
+        "value": 1.5
+      }
+    ],
+    "visual": {
+      "shape": "s2",
+      "super": true
+    }
+  },
+  "shield_mut": {
+    "id": "shield_mut",
+    "name": "壁垒盾·质变",
+    "tier": "mutation",
+    "category": "weapon",
+    "require_weapon": "shield",
+    "require_affix": null,
+    "color": [
+      0.297,
+      0.602,
+      0.943
+    ],
+    "desc": "【质变】壁垒盾获得「贯穿无双」：伤害/效能提升，并附加贯穿无双特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "count_add",
+        "value": 1
+      },
+      {
+        "kind": "wflag",
+        "flag": "pierce_all",
+        "value": 1.0
+      }
+    ],
+    "visual": {
+      "shape": "s3",
+      "super": false
+    }
+  },
+  "shield_sup": {
+    "id": "shield_sup",
+    "name": "壁垒盾·超质变",
+    "tier": "super",
+    "category": "weapon",
+    "require_weapon": "shield",
+    "require_affix": "shield_mut",
+    "color": [
+      0.779,
+      0.181,
+      0.979
+    ],
+    "desc": "【超质变】壁垒盾突破极限：大幅强化并叠加「贯穿无双」与「连锁闪电」双重特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wstat",
+        "stat": "area_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wflag",
+        "flag": "pierce_all",
+        "value": 1.5
+      },
+      {
+        "kind": "wflag",
+        "flag": "chain",
+        "value": 1.5
+      }
+    ],
+    "visual": {
+      "shape": "s3",
+      "super": true
+    }
+  },
+  "element_orb_mut": {
+    "id": "element_orb_mut",
+    "name": "元素核·质变",
+    "tier": "mutation",
+    "category": "weapon",
+    "require_weapon": "element_orb",
+    "require_affix": null,
+    "color": [
+      0.297,
+      0.586,
+      0.943
+    ],
+    "desc": "【质变】元素核获得「分叉裂变」：伤害/效能提升，并附加分叉裂变特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.15
+      },
+      {
+        "kind": "wflag",
+        "flag": "split",
+        "value": 1.0
+      }
+    ],
+    "visual": {
+      "shape": "s4",
+      "super": false
+    }
+  },
+  "element_orb_sup": {
+    "id": "element_orb_sup",
+    "name": "元素核·超质变",
+    "tier": "super",
+    "category": "weapon",
+    "require_weapon": "element_orb",
+    "require_affix": "element_orb_mut",
+    "color": [
+      0.979,
+      0.181,
+      0.979
+    ],
+    "desc": "【超质变】元素核突破极限：大幅强化并叠加「分叉裂变」与「灼烧持续」双重特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wstat",
+        "stat": "projectile_speed_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wflag",
+        "flag": "split",
+        "value": 1.5
+      },
+      {
+        "kind": "wflag",
+        "flag": "burn",
+        "value": 1.5
+      }
+    ],
+    "visual": {
+      "shape": "s4",
+      "super": true
+    }
+  },
+  "summon_mut": {
+    "id": "summon_mut",
+    "name": "召唤环·质变",
+    "tier": "mutation",
+    "category": "weapon",
+    "require_weapon": "summon",
+    "require_affix": null,
+    "color": [
+      0.297,
+      0.571,
+      0.943
+    ],
+    "desc": "【质变】召唤环获得「暴戾增幅」：伤害/效能提升，并附加暴戾增幅特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "count_add",
+        "value": 1
+      },
+      {
+        "kind": "wflag",
+        "flag": "crit_up",
+        "value": 1.0
+      }
+    ],
+    "visual": {
+      "shape": "s5",
+      "super": false
+    }
+  },
+  "summon_sup": {
+    "id": "summon_sup",
+    "name": "召唤环·超质变",
+    "tier": "super",
+    "category": "weapon",
+    "require_weapon": "summon",
+    "require_affix": "summon_mut",
+    "color": [
+      0.979,
+      0.181,
+      0.779
+    ],
+    "desc": "【超质变】召唤环突破极限：大幅强化并叠加「暴戾增幅」与「冰霜减速」双重特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wstat",
+        "stat": "area_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wflag",
+        "flag": "crit_up",
+        "value": 1.5
+      },
+      {
+        "kind": "wflag",
+        "flag": "freeze",
+        "value": 1.5
+      }
+    ],
+    "visual": {
+      "shape": "s5",
+      "super": true
+    }
+  },
+  "holy_circle_mut": {
+    "id": "holy_circle_mut",
+    "name": "圣环·质变",
+    "tier": "mutation",
+    "category": "weapon",
+    "require_weapon": "holy_circle",
+    "require_affix": null,
+    "color": [
+      0.297,
+      0.555,
+      0.943
+    ],
+    "desc": "【质变】圣环获得「崩裂击退」：伤害/效能提升，并附加崩裂击退特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "area_mult",
+        "value": 0.25
+      },
+      {
+        "kind": "wflag",
+        "flag": "knockback_up",
+        "value": 1.0
+      }
+    ],
+    "visual": {
+      "shape": "s6",
+      "super": false
+    }
+  },
+  "holy_circle_sup": {
+    "id": "holy_circle_sup",
+    "name": "圣环·超质变",
+    "tier": "super",
+    "category": "weapon",
+    "require_weapon": "holy_circle",
+    "require_affix": "holy_circle_mut",
+    "color": [
+      0.979,
+      0.181,
+      0.58
+    ],
+    "desc": "【超质变】圣环突破极限：大幅强化并叠加「崩裂击退」与「吸血命中」双重特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wstat",
+        "stat": "area_mult",
+        "value": 0.35
+      },
+      {
+        "kind": "wflag",
+        "flag": "knockback_up",
+        "value": 1.5
+      },
+      {
+        "kind": "wflag",
+        "flag": "lifesteal_hit",
+        "value": 1.5
+      }
+    ],
+    "visual": {
+      "shape": "s6",
+      "super": true
+    }
+  },
+  "shield_bow_mut": {
+    "id": "shield_bow_mut",
+    "name": "破盾弓·质变",
+    "tier": "mutation",
+    "category": "weapon",
+    "require_weapon": "shield_bow",
+    "require_affix": null,
+    "color": [
+      0.297,
+      0.54,
+      0.943
+    ],
+    "desc": "【质变】破盾弓获得「环刃风暴」：伤害/效能提升，并附加环刃风暴特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.15
+      },
+      {
+        "kind": "wflag",
+        "flag": "orbit_storm",
+        "value": 1.0
+      }
+    ],
+    "visual": {
+      "shape": "s7",
+      "super": false
+    }
+  },
+  "shield_bow_sup": {
+    "id": "shield_bow_sup",
+    "name": "破盾弓·超质变",
+    "tier": "super",
+    "category": "weapon",
+    "require_weapon": "shield_bow",
+    "require_affix": "shield_bow_mut",
+    "color": [
+      0.979,
+      0.181,
+      0.38
+    ],
+    "desc": "【超质变】破盾弓突破极限：大幅强化并叠加「环刃风暴」与「点金夺财」双重特效",
+    "effects": [
+      {
+        "kind": "wstat",
+        "stat": "damage_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wstat",
+        "stat": "projectile_speed_mult",
+        "value": 0.3
+      },
+      {
+        "kind": "wflag",
+        "flag": "orbit_storm",
+        "value": 1.5
+      },
+      {
+        "kind": "wflag",
+        "flag": "gold_on_hit",
+        "value": 1.5
+      }
+    ],
+    "visual": {
+      "shape": "s7",
+      "super": true
+    }
+  },
+  "ply_luck_mut": {
+    "id": "ply_luck_mut",
+    "name": "幸运质变",
+    "tier": "mutation",
+    "category": "player",
+    "require_weapon": null,
+    "require_affix": null,
+    "color": [
+      0.96,
+      0.802,
+      0.24
+    ],
+    "desc": "【玩家质变】幸运 +30%，掉落品质与稀有词条更易出现",
+    "effects": [
+      {
+        "kind": "pstat",
+        "stat": "luck_mult",
+        "value": 0.3
+      }
+    ],
+    "visual": {
+      "shape": "s2",
+      "super": false
+    }
+  },
+  "ply_power_mut": {
+    "id": "ply_power_mut",
+    "name": "强韧质变",
+    "tier": "mutation",
+    "category": "player",
+    "require_weapon": null,
+    "require_affix": null,
+    "color": [
+      0.96,
+      0.326,
+      0.24
+    ],
+    "desc": "【玩家质变】全武器伤害 +15%",
+    "effects": [
+      {
+        "kind": "pstat",
+        "stat": "damage_mult",
+        "value": 0.15
+      }
+    ],
+    "visual": {
+      "shape": "s5",
+      "super": false
+    }
+  },
+  "ply_luck_sup": {
+    "id": "ply_luck_sup",
+    "name": "天命超质变",
+    "tier": "super",
+    "category": "player",
+    "require_weapon": null,
+    "require_affix": "ply_luck_mut",
+    "color": [
+      1.0,
+      0.802,
+      0.1
+    ],
+    "desc": "【玩家超质变】幸运再 +40% 且金币获取 +30%",
+    "effects": [
+      {
+        "kind": "pstat",
+        "stat": "luck_mult",
+        "value": 0.4
+      },
+      {
+        "kind": "pstat",
+        "stat": "gold_mult",
+        "value": 0.3
+      }
+    ],
+    "visual": {
+      "shape": "s2",
+      "super": true
+    }
+  },
+  "ply_vit_sup": {
+    "id": "ply_vit_sup",
+    "name": "不灭超质变",
+    "tier": "super",
+    "category": "player",
+    "require_weapon": null,
+    "require_affix": "ply_power_mut",
+    "color": [
+      0.02,
+      1.0,
+      0.0
+    ],
+    "desc": "【玩家超质变】伤害 +25%、最大生命 +25%、治疗效率 +30%",
+    "effects": [
+      {
+        "kind": "pstat",
+        "stat": "damage_mult",
+        "value": 0.25
+      },
+      {
+        "kind": "pstat",
+        "stat": "max_hp_mult",
+        "value": 0.25
+      },
+      {
+        "kind": "pstat",
+        "stat": "heal_mult",
+        "value": 0.3
+      }
+    ],
+    "visual": {
+      "shape": "s5",
+      "super": true
+    }
+  }
+}

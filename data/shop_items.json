@@ -13,5 +13,9 @@
   "a_crit":   { "id":"a_crit",   "name":"锐眼药剂",     "desc":"本局暴击 +5%",               "category":"attribute",  "cost":100, "currency":"gold",    "effect": {"type":"stat", "stat":"crit", "amount":0.05} },
   "em_wup":   { "id":"em_wup",   "name":"【绿宝石】武器觉醒", "desc":"随机一把已有武器 +3 级（绿宝石）", "category":"weapon", "cost":3, "currency":"emerald", "effect": {"type":"weapon_level", "levels":3} },
   "em_admg":  { "id":"em_admg",  "name":"【绿宝石】神力灌注", "desc":"本局伤害 +25%（绿宝石）",      "category":"attribute", "cost":4, "currency":"emerald", "effect": {"type":"stat", "stat":"damage", "amount":0.25} },
-  "em_ahp":   { "id":"em_ahp",   "name":"【绿宝石】不朽之躯", "desc":"本局生命上限 +120（绿宝石）",   "category":"attribute", "cost":4, "currency":"emerald", "effect": {"type":"stat", "stat":"max_hp", "amount":120.0} }
+  "em_ahp":   { "id":"em_ahp",   "name":"【绿宝石】不朽之躯", "desc":"本局生命上限 +120（绿宝石）",   "category":"attribute", "cost":4, "currency":"emerald", "effect": {"type":"stat", "stat":"max_hp", "amount":120.0} },
+
+  "class_w_new": { "id":"class_w_new", "name":"职业武器·入手", "desc":"获得本职业专属武器（若已拥有则升级）", "category":"weapon", "cost":120, "currency":"gold", "effect": {"type":"new_weapon_class"} },
+  "class_w_up":  { "id":"class_w_up",  "name":"职业武器·精炼", "desc":"本职业专属武器 +1 级（专属强化词条）", "category":"weapon", "cost":100, "currency":"gold", "effect": {"type":"weapon_level_class", "levels":1} },
+  "em_cw_up":   { "id":"em_cw_up",   "name":"【绿宝石】职业武器·觉醒", "desc":"本职业专属武器 +2 级（绿宝石）", "category":"weapon", "cost":3, "currency":"emerald", "effect": {"type":"weapon_level_class", "levels":2} }
 }

@@ -64,6 +64,11 @@ func _apply_effect(eff: Dictionary, player) -> bool:
 			return _weapon_level(int(eff.get("levels", 1)), player)
 		"new_weapon":
 			return _new_weapon(player)
+		# 职业专属武器：确保装备本职业专属武器，并 +levels 级（用于局内强化专属武器）
+		"weapon_level_class":
+			return _weapon_level_class(int(eff.get("levels", 1)), player)
+		"new_weapon_class":
+			return _weapon_level_class(int(eff.get("levels", 1)), player)
 		"stat":
 			var stat = str(eff.get("stat", ""))
 			var amt = float(eff.get("amount", 0.0))
@@ -84,14 +89,32 @@ func _weapon_level(levels: int, player) -> bool:
 		player.apply_upgrade({"type": "weapon", "id": wid})
 	return true
 
-## 获得一把随机尚未拥有的武器；若已全部拥有则不扣费（返回 false）
+## 获得一把随机尚未拥有的武器；若已全部拥有（或剩余槽位均已被占用）则不扣费（返回 false）
 func _new_weapon(player) -> bool:
 	var candidates = []
 	for wid in DataTables.weapons.keys():
-		if not player.weapons.has(wid):
-			candidates.append(wid)
+		if player.weapons.has(wid):
+			continue
+		# 槽位互斥：同槽位（主手/副手/光环/环绕）已拥有任意一把则不再给新武器
+		var wslot = str(DataTables.weapons[wid].get("slot", ""))
+		if wslot != "" and UpgradePool.slot_owned(player, wslot):
+			continue
+		candidates.append(wid)
 	if candidates.is_empty():
 		return false
 	var wid = candidates[randi() % candidates.size()]
 	player.apply_upgrade({"type": "weapon", "id": wid})
+	return true
+
+## 职业专属武器局内强化：确保装备玩家的 class_weapon，并升 levels 级；
+## 若该职业武器已拥有则只升级。专供「专属武器局内强化」通道（商店/宝箱）。
+func _weapon_level_class(levels: int, player) -> bool:
+	var wid = player.class_weapon
+	if wid == "" or not DataTables.weapons.has(wid):
+		return false
+	if not player.weapons.has(wid):
+		player._equip_weapon(wid, 1)
+		levels -= 1
+	for i in range(levels):
+		player.apply_upgrade({"type": "weapon", "id": wid})
 	return true

@@ -30,6 +30,14 @@ func _input(event: InputEvent) -> void:
 	# 仅在真实触屏设备启用；桌面鼠标模拟的触摸事件被忽略，键盘逻辑不受影响
 	if not (OS.has_feature("android") or OS.has_feature("ios")):
 		return
+	# 仅在进行中的对局激活摇杆：开始/局外升级/职业选择/暂停/升级三选一等
+	# 界面不接管触摸，避免摇杆遮挡并吞掉面板的滑动手势（用户反馈的滚动困难）。
+	if not (GameManager.playing and not get_tree().paused):
+		if active:
+			active = false
+			touch_index = -1
+			queue_redraw()
+		return
 	if event is InputEventScreenTouch:
 		if event.pressed and touch_index < 0:
 			touch_index = event.index

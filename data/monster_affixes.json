@@ -1,0 +1,282 @@
+{
+  "m_frenzy": {
+    "id": "m_frenzy",
+    "name": "狂躁",
+    "tier": "monster",
+    "color": [
+      0.18,
+      0.1,
+      0.12
+    ],
+    "desc": "敌人移动速度 +18%",
+    "min_rank": 1,
+    "effects": [
+      {
+        "kind": "estat",
+        "stat": "speed_mult",
+        "value": 0.18
+      }
+    ],
+    "visual": {
+      "shape": "s3",
+      "super": true
+    }
+  },
+  "m_edge": {
+    "id": "m_edge",
+    "name": "利刃",
+    "tier": "monster",
+    "color": [
+      0.2,
+      0.12,
+      0.1
+    ],
+    "desc": "敌人伤害 +18%",
+    "min_rank": 1,
+    "effects": [
+      {
+        "kind": "estat",
+        "stat": "damage_mult",
+        "value": 0.18
+      }
+    ],
+    "visual": {
+      "shape": "s4",
+      "super": true
+    }
+  },
+  "m_swarm": {
+    "id": "m_swarm",
+    "name": "蜂群",
+    "tier": "monster",
+    "color": [
+      0.2,
+      0.16,
+      0.08
+    ],
+    "desc": "敌人生命 +22%",
+    "min_rank": 2,
+    "effects": [
+      {
+        "kind": "estat",
+        "stat": "hp_mult",
+        "value": 0.22
+      }
+    ],
+    "visual": {
+      "shape": "s8",
+      "super": true
+    }
+  },
+  "m_curse": {
+    "id": "m_curse",
+    "name": "诅咒",
+    "tier": "monster",
+    "color": [
+      0.22,
+      0.08,
+      0.18
+    ],
+    "desc": "你的全武器伤害 -12%",
+    "min_rank": 2,
+    "effects": [
+      {
+        "kind": "dstat",
+        "stat": "damage_mult",
+        "value": -0.12
+      }
+    ],
+    "visual": {
+      "shape": "s9",
+      "super": true
+    }
+  },
+  "m_iron": {
+    "id": "m_iron",
+    "name": "铁壁",
+    "tier": "monster",
+    "color": [
+      0.16,
+      0.18,
+      0.2
+    ],
+    "desc": "敌人获得 35 点护盾",
+    "min_rank": 3,
+    "effects": [
+      {
+        "kind": "estat",
+        "stat": "shield",
+        "value": 35.0
+      }
+    ],
+    "visual": {
+      "shape": "s13",
+      "super": true
+    }
+  },
+  "m_drain": {
+    "id": "m_drain",
+    "name": "汲血",
+    "tier": "monster",
+    "color": [
+      0.22,
+      0.05,
+      0.1
+    ],
+    "desc": "你的治疗效率 -45%",
+    "min_rank": 3,
+    "effects": [
+      {
+        "kind": "dstat",
+        "stat": "heal_mult",
+        "value": -0.45
+      }
+    ],
+    "visual": {
+      "shape": "s14",
+      "super": true
+    }
+  },
+  "m_quick": {
+    "id": "m_quick",
+    "name": "锋锐",
+    "tier": "monster",
+    "color": [
+      0.24,
+      0.12,
+      0.08
+    ],
+    "desc": "敌人接触伤害 +30%",
+    "min_rank": 3,
+    "effects": [
+      {
+        "kind": "estat",
+        "stat": "touch_dmg_mult",
+        "value": 0.3
+      }
+    ],
+    "visual": {
+      "shape": "s15",
+      "super": true
+    }
+  },
+  "m_abyss": {
+    "id": "m_abyss",
+    "name": "深渊",
+    "tier": "monster",
+    "color": [
+      0.1,
+      0.05,
+      0.18
+    ],
+    "desc": "敌人生命 +35% 且伤害 +35%",
+    "min_rank": 4,
+    "effects": [
+      {
+        "kind": "estat",
+        "stat": "hp_mult",
+        "value": 0.35
+      },
+      {
+        "kind": "estat",
+        "stat": "damage_mult",
+        "value": 0.35
+      }
+    ],
+    "visual": {
+      "shape": "s3",
+      "super": true
+    }
+  },
+  "m_rot": {
+    "id": "m_rot",
+    "name": "腐化",
+    "tier": "monster",
+    "color": [
+      0.12,
+      0.18,
+      0.06
+    ],
+    "desc": "敌人每秒再生 3 点生命",
+    "min_rank": 4,
+    "effects": [
+      {
+        "kind": "estat",
+        "stat": "regen",
+        "value": 3.0
+      }
+    ],
+    "visual": {
+      "shape": "s4",
+      "super": true
+    }
+  },
+  "m_weak": {
+    "id": "m_weak",
+    "name": "虚弱",
+    "tier": "monster",
+    "color": [
+      0.1,
+      0.14,
+      0.16
+    ],
+    "desc": "你的移动速度 -15%",
+    "min_rank": 4,
+    "effects": [
+      {
+        "kind": "dstat",
+        "stat": "speed_mult",
+        "value": -0.15
+      }
+    ],
+    "visual": {
+      "shape": "s5",
+      "super": true
+    }
+  },
+  "m_gloom": {
+    "id": "m_gloom",
+    "name": "阴霾",
+    "tier": "monster",
+    "color": [
+      0.06,
+      0.1,
+      0.14
+    ],
+    "desc": "你的幸运 -30%、拾取范围 -25%",
+    "min_rank": 4,
+    "effects": [
+      {
+        "kind": "dstat",
+        "stat": "luck_mult",
+        "value": -0.3
+      },
+      {
+        "kind": "dstat",
+        "stat": "pickup_mult",
+        "value": -0.25
+      }
+    ],
+    "visual": {
+      "shape": "s6",
+      "super": true
+    }
+  },
+  "m_calm": {
+    "id": "m_calm",
+    "name": "暂歇",
+    "tier": "monster",
+    "color": [
+      0.15,
+      0.15,
+      0.15
+    ],
+    "desc": "本局无怪物强化（安全局）",
+    "min_rank": 0,
+    "effects": [],
+    "visual": {
+      "shape": "s11",
+      "super": true
+    }
+  }
+}

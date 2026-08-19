@@ -4,6 +4,7 @@ extends Control
 ## 文字字号与布局位置均按视口宽度等比缩放，并在窗口尺寸变化时自动重排。
 
 const DecorBgScript = preload("res://scripts/systems/decor_bg.gd")
+const CreatureVisual = preload("res://scripts/systems/creature_visual.gd")
 
 var bg: Control
 var title: Label
@@ -16,6 +17,11 @@ var map_panel: Panel
 var meta_panel: Panel
 var meta_list: VBoxContainer
 var meta_status: Label
+var class_panel: Panel
+var codex_panel: Panel
+var codex_scroll: ScrollContainer
+var codex_list: VBoxContainer
+var codex_tab: String = "class"   # 图鉴当前标签："class"=职业 / "monster"=怪物
 var pending_new_slot: String = ""
 var current_view: String = "main"
 
@@ -45,6 +51,10 @@ func _on_size_changed():
 		refresh_maps()
 	elif current_view == "meta":
 		refresh_meta()
+	elif current_view == "class":
+		refresh_classes()
+	elif current_view == "codex":
+		refresh_codex()
 
 func _build_all():
 	for c in get_children():
@@ -59,6 +69,8 @@ func _build_all():
 	_build_saves_panel()
 	_build_map_panel()
 	_build_meta_panel()
+	_build_class_panel()
+	_build_codex_panel()
 
 func _build_bg():
 	bg = DecorBgScript.new()
@@ -80,8 +92,8 @@ func _build_title():
 
 func _build_main_buttons():
 	var f = _f()
-	var names = ["开始游戏", "局外强化", "设置", "存档管理"]
-	var actions = [_on_start, _on_meta, _on_settings, _on_saves]
+	var names = ["开始游戏", "图鉴", "局外强化", "设置", "存档管理"]
+	var actions = [_on_start, _on_codex, _on_meta, _on_settings, _on_saves]
 	for i in range(names.size()):
 		var b = Button.new()
 		b.text = names[i]
@@ -101,6 +113,8 @@ func show_only(which: String) -> void:
 	saves_panel.visible = (which == "saves")
 	map_panel.visible = (which == "map")
 	meta_panel.visible = (which == "meta")
+	class_panel.visible = (which == "class")
+	codex_panel.visible = (which == "codex")
 	for b in main_buttons:
 		b.visible = (which == "main")
 	title.visible = (which == "main")
@@ -283,7 +297,224 @@ func refresh_maps():
 
 func _on_map_chosen(mid: String):
 	GameManager.set_map(mid)
+	refresh_classes()
+	show_only("class")
+
+## ---------- 职业选择（六职业 + 无职业）----------
+func _build_class_panel():
+	var f = _f()
+	class_panel = Panel.new()
+	class_panel.visible = false
+	class_panel.size = Vector2(720 * f, 680 * f)   # 加高：7 个职业按钮 + 返回键不再互相遮挡
+	class_panel.position = get_viewport_rect().size / 2.0 - class_panel.size / 2.0
+	add_child(class_panel)
+	var t = Label.new()
+	t.text = "选择职业（决定专属武器与专属强化）"
+	t.position = Vector2(20 * f, 12 * f)
+	t.add_theme_font_size_override("font_size", int(28 * f))
+	class_panel.add_child(t)
+	var back = Button.new()
+	back.text = "返回"
+	back.position = Vector2(20 * f, 632 * f)       # 下移，避开最后一个职业按钮（512+64=576f 处结束）
+	back.size = Vector2(100 * f, 36 * f)
+	back.add_theme_font_size_override("font_size", int(20 * f))
+	back.connect("pressed", _on_class_back)
+	class_panel.add_child(back)
+
+func refresh_classes():
+	var f = _f()
+	for c in class_panel.get_children():
+		if c.name.begins_with("cls_"):
+			c.queue_free()
+	var i = 0
+	for cid in DataTables.characters.keys():
+		var c = DataTables.characters[cid]
+		if not c.get("playable", false):
+			continue
+		var b = Button.new()
+		b.name = "cls_" + cid
+		var wname = ""
+		if DataTables.weapons.has(str(c.get("start_weapon", ""))):
+			wname = DataTables.weapons[str(c.get("start_weapon", ""))].name
+		var tag = "无职业" if not c.get("is_class", false) else "职业"
+		var spec = str(c.get("spec", ""))
+		var spec_name = ""
+		if spec != "" and DataTables.meta_upgrades.has(spec):
+			spec_name = "｜专精：" + str(DataTables.meta_upgrades[spec].get("name", ""))
+		b.text = "%s（%s）\n专属武器：%s%s" % [str(c.get("name", cid)), tag, wname, spec_name]
+		b.position = Vector2(20 * f, (56 + i * 76) * f)
+		b.size = Vector2(680 * f, 64 * f)
+		b.add_theme_font_size_override("font_size", int(21 * f))
+		b.connect("pressed", _on_class_chosen.bind(cid))
+		class_panel.add_child(b)
+		i += 1
+
+func _on_class_chosen(cid: String):
+	GameManager.set_player_class(cid)
 	get_tree().change_scene_to_file("res://scenes/main.tscn")
+
+func _on_class_back():
+	refresh_maps()
+	show_only("map")
+
+## ---------- 图鉴（职业 / 怪物模型展示） ----------
+func _on_codex():
+	refresh_codex()
+	show_only("codex")
+
+func _build_codex_panel():
+	var f = _f()
+	codex_panel = Panel.new()
+	codex_panel.visible = false
+	codex_panel.size = Vector2(1080 * f, 680 * f)
+	codex_panel.position = get_viewport_rect().size / 2.0 - codex_panel.size / 2.0
+	add_child(codex_panel)
+	var t = Label.new()
+	t.text = "图鉴"
+	t.position = Vector2(20 * f, 10 * f)
+	t.add_theme_font_size_override("font_size", int(30 * f))
+	codex_panel.add_child(t)
+	var b_class = Button.new()
+	b_class.name = "tab_class"
+	b_class.text = "职业图鉴"
+	b_class.position = Vector2(150 * f, 14 * f)
+	b_class.size = Vector2(150 * f, 40 * f)
+	b_class.add_theme_font_size_override("font_size", int(22 * f))
+	b_class.connect("pressed", func(): _set_codex_tab("class"))
+	codex_panel.add_child(b_class)
+	var b_mon = Button.new()
+	b_mon.name = "tab_monster"
+	b_mon.text = "怪物图鉴"
+	b_mon.position = Vector2(310 * f, 14 * f)
+	b_mon.size = Vector2(150 * f, 40 * f)
+	b_mon.add_theme_font_size_override("font_size", int(22 * f))
+	b_mon.connect("pressed", func(): _set_codex_tab("monster"))
+	codex_panel.add_child(b_mon)
+	codex_scroll = ScrollContainer.new()
+	codex_scroll.position = Vector2(16 * f, 64 * f)
+	codex_scroll.size = Vector2(1048 * f, 560 * f)
+	codex_panel.add_child(codex_scroll)
+	codex_list = VBoxContainer.new()
+	codex_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	codex_list.add_theme_constant_override("separation", int(8 * f))
+	codex_scroll.add_child(codex_list)
+	var back = Button.new()
+	back.text = "返回"
+	back.position = Vector2(20 * f, 634 * f)
+	back.size = Vector2(100 * f, 36 * f)
+	back.add_theme_font_size_override("font_size", int(20 * f))
+	back.connect("pressed", _on_back)
+	codex_panel.add_child(back)
+
+func _set_codex_tab(tab: String):
+	codex_tab = tab
+	refresh_codex()
+
+func _codex_header(text: String) -> Label:
+	var h = Label.new()
+	h.text = text
+	h.add_theme_font_size_override("font_size", int(22 * _f()))
+	h.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+	return h
+
+func _codex_grid() -> GridContainer:
+	var g = GridContainer.new()
+	g.columns = 3
+	g.add_theme_constant_override("h_separation", int(12 * _f()))
+	g.add_theme_constant_override("v_separation", int(10 * _f()))
+	return g
+
+func refresh_codex():
+	if codex_list == null:
+		return
+	var f = _f()
+	for c in codex_list.get_children():
+		c.queue_free()
+	if codex_tab == "class":
+		codex_list.add_child(_codex_header("职业图鉴：六职业 + 无职业（点击下方「开始游戏」可选用）"))
+		var grid = _codex_grid()
+		codex_list.add_child(grid)
+		for cid in DataTables.characters.keys():
+			var c = DataTables.characters[cid]
+			if not c.get("playable", false):
+				continue
+			_add_class_cell(grid, cid, f)
+	else:
+		for mid in _sorted_map_ids():
+			var m = DataTables.maps[mid]
+			codex_list.add_child(_codex_header("第%d界 · %s" % [int(m.get("order", 0)), str(m.get("name", mid))]))
+			var grid = _codex_grid()
+			codex_list.add_child(grid)
+			for eid in m.get("roster", []):
+				_add_monster_cell(grid, eid, mid, f)
+
+func _add_class_cell(grid: GridContainer, cid: String, f: float) -> void:
+	var c = DataTables.characters[cid]
+	var box = HBoxContainer.new()
+	box.custom_minimum_size = Vector2(330 * f, 104 * f)
+	var tr = TextureRect.new()
+	tr.texture = CreatureVisual.get_player_texture(str(cid), 0)
+	tr.custom_minimum_size = Vector2(96 * f, 96 * f)
+	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	box.add_child(tr)
+	var vb = VBoxContainer.new()
+	var tag = "无职业" if not c.get("is_class", false) else "职业"
+	var name = Label.new()
+	name.text = "%s（%s）" % [str(c.get("name", cid)), tag]
+	name.add_theme_font_size_override("font_size", int(20 * f))
+	vb.add_child(name)
+	var wname = ""
+	if DataTables.weapons.has(str(c.get("start_weapon", ""))):
+		wname = DataTables.weapons[str(c.get("start_weapon", ""))].name
+	var spec = str(c.get("spec", ""))
+	var spec_name = ""
+	if spec != "" and DataTables.meta_upgrades.has(spec):
+		spec_name = "｜专精：" + str(DataTables.meta_upgrades[spec].get("name", ""))
+	var info = Label.new()
+	info.text = "专属武器：%s%s" % [wname, spec_name]
+	info.add_theme_font_size_override("font_size", int(15 * f))
+	info.add_theme_color_override("font_color", Color(0.72, 0.78, 0.88))
+	vb.add_child(info)
+	var stats = Label.new()
+	stats.text = "生命 %d ｜ 移速 %d" % [int(float(c.get("hp", 100))), int(float(c.get("speed", 200)))]
+	stats.add_theme_font_size_override("font_size", int(14 * f))
+	stats.add_theme_color_override("font_color", Color(0.55, 0.62, 0.72))
+	vb.add_child(stats)
+	box.add_child(vb)
+	grid.add_child(box)
+
+func _add_monster_cell(grid: GridContainer, eid: String, world: String, f: float) -> void:
+	if not DataTables.enemies.has(eid):
+		return
+	var e = DataTables.enemies[eid]
+	var box = HBoxContainer.new()
+	box.custom_minimum_size = Vector2(330 * f, 104 * f)
+	var tr = TextureRect.new()
+	tr.texture = CreatureVisual.get_enemy_texture(str(e.get("shape", "imp")), Color.from_string(str(e.get("color", "#ffffff")), Color.WHITE), world, 0)
+	tr.custom_minimum_size = Vector2(96 * f, 96 * f)
+	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	box.add_child(tr)
+	var vb = VBoxContainer.new()
+	var tags = []
+	if e.get("boss", false):
+		tags.append("Boss")
+	elif e.get("elite", false):
+		tags.append("精英")
+	else:
+		tags.append("普通")
+	if e.get("shield", 0.0) > 0.0:
+		tags.append("护盾")
+	var name = Label.new()
+	name.text = "%s【%s】" % [str(e.get("name", eid)), "、".join(tags)]
+	name.add_theme_font_size_override("font_size", int(20 * f))
+	vb.add_child(name)
+	var stats = Label.new()
+	stats.text = "生命 %d ｜ 伤害 %d ｜ 移速 %d" % [int(e.get("hp", 0)), int(e.get("damage", 0)), int(e.get("speed", 0))]
+	stats.add_theme_font_size_override("font_size", int(14 * f))
+	stats.add_theme_color_override("font_color", Color(0.55, 0.62, 0.72))
+	vb.add_child(stats)
+	box.add_child(vb)
+	grid.add_child(box)
 
 ## ---------- 局外强化商店（金币买初始属性） ----------
 func _on_meta():

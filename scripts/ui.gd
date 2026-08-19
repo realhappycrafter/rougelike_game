@@ -6,6 +6,11 @@ extends Control
 signal option_selected(index: int)
 signal restart_requested()
 signal shop_requested()
+signal monster_affix_chosen(index: int)
+signal monster_affix_reroll()
+
+# 词条徽记渲染器（显式 preload，避免依赖全局 class_name 注册时序）
+const AffixVisual = preload("res://scripts/systems/affix_visual.gd")
 
 var timer_label: Label
 var hp_bar: ProgressBar
@@ -44,6 +49,15 @@ var shop_dim: ColorRect
 var shop_list: VBoxContainer
 var shop_gold_label: Label
 var shop_emerald_label: Label
+var shop_refresh_btn = null          # 金币刷新（词条商品重抽，成本递增）
+
+# 开局黑色词条三选一面板
+var monster_affix_panel = null
+var monster_affix_dim = null
+var monster_affix_buttons = []
+var monster_affix_reroll_btn = null
+var monster_affix_title = null
+var monster_affix_emblems = []   # 与 monster_affix_buttons 一一对应的词条徽记
 
 var _vs = Vector2(1920, 1080)
 
@@ -181,6 +195,7 @@ func init_hud() -> void:
 	_build_results_panel()
 	_build_pause_panel()
 	_build_shop_panel()
+	_build_monster_affix_panel()
 
 func update_hud() -> void:
 	if timer_label == null:
@@ -188,25 +203,42 @@ func update_hud() -> void:
 	var t = GameManager.run_time
 	var mm = int(t / 60)
 	var ss = int(fmod(t, 60))
-	timer_label.text = "%02d:%02d" % [mm, ss]
+	var tstr = "%02d:%02d" % [mm, ss]
+	if timer_label.text != tstr:
+		timer_label.text = tstr
 	var p = GameManager.player
 	if p:
-		hp_bar.max_value = p.max_hp
-		hp_bar.value = p.hp
-		hp_label.text = "%d / %d" % [int(p.hp), int(p.max_hp)]
-	exp_bar.max_value = GameManager.exp_needed
-	exp_bar.value = GameManager.exp
-	level_label.text = "Lv " + str(GameManager.level)
-	kill_label.text = "击杀 " + str(GameManager.kills)
-	gold_label.text = "金币 " + str(GameManager.gold)
-	emerald_label.text = "绿宝石 " + str(GameManager.emerald)
+		if hp_bar.max_value != p.max_hp:
+			hp_bar.max_value = p.max_hp
+		if hp_bar.value != p.hp:
+			hp_bar.value = p.hp
+		var hpstr = "%d / %d" % [int(p.hp), int(p.max_hp)]
+		if hp_label.text != hpstr:
+			hp_label.text = hpstr
+	if exp_bar.max_value != GameManager.exp_needed:
+		exp_bar.max_value = GameManager.exp_needed
+	if exp_bar.value != GameManager.exp:
+		exp_bar.value = GameManager.exp
+	var lvstr = "Lv " + str(GameManager.level)
+	if level_label.text != lvstr:
+		level_label.text = lvstr
+	var kstr = "击杀 " + str(GameManager.kills)
+	if kill_label.text != kstr:
+		kill_label.text = kstr
+	var gstr = "金币 " + str(GameManager.gold)
+	if gold_label.text != gstr:
+		gold_label.text = gstr
+	var estr = "绿宝石 " + str(GameManager.emerald)
+	if emerald_label.text != estr:
+		emerald_label.text = estr
 	if p:
 		var s = ""
 		for wid in p.weapons.keys():
 			s += DataTables.weapons[wid].name + " " + str(p.weapons[wid].level) + "\n"
 		for pid in p.passives.keys():
 			s += DataTables.passives[pid].name + " " + str(p.passives[pid].level) + "[" + str(p.passives[pid].quality) + "]\n"
-		weapon_label.text = s
+		if weapon_label.text != s:
+			weapon_label.text = s
 
 func _build_levelup_panel() -> void:
 	var f = _f()
@@ -217,8 +249,8 @@ func _build_levelup_panel() -> void:
 	add_child(levelup_dim)
 	levelup_panel = Panel.new()
 	levelup_panel.visible = false
-	levelup_panel.position = (_vs - Vector2(920, 280) * f) / 2.0
-	levelup_panel.size = Vector2(920, 280) * f
+	levelup_panel.position = (_vs - Vector2(1080, 480) * f) / 2.0
+	levelup_panel.size = Vector2(1080, 480) * f
 	add_child(levelup_panel)
 
 	var title = Label.new()
@@ -229,12 +261,31 @@ func _build_levelup_panel() -> void:
 
 	for i in range(3):
 		var b = Button.new()
-		b.position = Vector2(20 * f + i * 295 * f, 55 * f)
-		b.size = Vector2(275 * f, 200 * f)
-		b.add_theme_font_size_override("font_size", int(20 * f))
+		b.position = Vector2(24 * f + i * 360 * f, 70 * f)
+		b.size = Vector2(330 * f, 390 * f)
+		b.add_theme_font_size_override("font_size", int(22 * f))
+		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		b.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		b.clip_text = true
 		b.connect("pressed", _on_button_pressed.bind(i))
 		levelup_panel.add_child(b)
 		levelup_buttons.append(b)
+
+func _quality_stylebox(col: Color) -> StyleBoxFlat:
+	var sb = StyleBoxFlat.new()
+	sb.bg_color = Color(col.r * 0.25 + 0.06, col.g * 0.25 + 0.05, col.b * 0.25 + 0.09, 0.92)
+	sb.border_color = col
+	sb.set_border_width_all(3)
+	sb.set_corner_radius_all(12)
+	sb.set_content_margin_all(10)
+	return sb
+
+func _apply_quality_style(btn: Button, col: Color) -> void:
+	var sb = _quality_stylebox(col)
+	btn.add_theme_stylebox_override("normal", sb)
+	btn.add_theme_stylebox_override("hover", sb)
+	btn.add_theme_stylebox_override("pressed", sb)
+	btn.add_theme_stylebox_override("focus", sb)
 
 func show_level_up(options: Array) -> void:
 	# 防御：升级弹窗出现时确保暂停菜单已隐藏（二者不会同时出现）
@@ -250,6 +301,7 @@ func show_level_up(options: Array) -> void:
 			if o.has("quality_color") and o.quality_color != null:
 				col = Color.from_string(o.quality_color, Color.WHITE)
 			levelup_buttons[i].add_theme_color_override("font_color", col)
+			_apply_quality_style(levelup_buttons[i], col)
 		else:
 			levelup_buttons[i].visible = false
 	levelup_panel.visible = true
@@ -441,6 +493,91 @@ func _build_shop_panel() -> void:
 	close.connect("pressed", hide_shop)
 	shop_panel.add_child(close)
 
+	# 金币刷新：重抽词条商品（质变/超质变），成本随刷新次数递增
+	var refresh = Button.new()
+	refresh.name = "shop_refresh"
+	refresh.add_theme_font_size_override("font_size", int(18 * f))
+	refresh.size = Vector2(190 * f, 40 * f)
+	refresh.position = Vector2(shop_panel.size.x - 206 * f, 44 * f)
+	refresh.connect("pressed", _on_refresh_shop)
+	shop_panel.add_child(refresh)
+	shop_refresh_btn = refresh
+
+## 开局黑色词条三选一面板（怪物黑色词条：按难度数量，免费3次刷新后金币刷新）
+func _build_monster_affix_panel() -> void:
+	var f = _f()
+	monster_affix_dim = ColorRect.new()
+	monster_affix_dim.color = Color(0.04, 0.0, 0.06, 0.72)
+	monster_affix_dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	monster_affix_dim.visible = false
+	add_child(monster_affix_dim)
+	monster_affix_panel = Panel.new()
+	monster_affix_panel.visible = false
+	monster_affix_panel.size = Vector2(1080, 530) * f
+	monster_affix_panel.position = (_vs - monster_affix_panel.size) / 2.0
+	add_child(monster_affix_panel)
+	monster_affix_title = Label.new()
+	monster_affix_title.position = Vector2(20 * f, 12 * f)
+	monster_affix_title.add_theme_font_size_override("font_size", int(24 * f))
+	monster_affix_title.add_theme_color_override("font_color", Color(0.85, 0.6, 0.95))
+	monster_affix_panel.add_child(monster_affix_title)
+	for i in range(3):
+		var b = Button.new()
+		b.position = Vector2(24 * f + i * 360 * f, 70 * f)
+		b.size = Vector2(330 * f, 390 * f)
+		b.add_theme_font_size_override("font_size", int(19 * f))
+		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		b.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		b.clip_text = true
+		b.connect("pressed", _on_monster_affix_btn.bind(i))
+		monster_affix_panel.add_child(b)
+		monster_affix_buttons.append(b)
+		var emb = AffixVisual.new()
+		emb.custom_minimum_size = Vector2(54 * f, 54 * f)
+		emb.position = Vector2(b.position.x + 12 * f, b.position.y + 12 * f)
+		emb.visible = false
+		monster_affix_panel.add_child(emb)
+		monster_affix_emblems.append(emb)
+	monster_affix_reroll_btn = Button.new()
+	monster_affix_reroll_btn.position = Vector2(20 * f, 472 * f)
+	monster_affix_reroll_btn.size = Vector2(280 * f, 42 * f)
+	monster_affix_reroll_btn.add_theme_font_size_override("font_size", int(20 * f))
+	monster_affix_reroll_btn.connect("pressed", _on_monster_affix_reroll)
+	monster_affix_panel.add_child(monster_affix_reroll_btn)
+
+func show_monster_affix_draft(options: Array, free_left: int, gold_cost: int, remaining: int) -> void:
+	monster_affix_title.text = "世界侵蚀 · 黑色词条（还需选择 %d 个）" % remaining
+	for i in range(3):
+		if i < options.size():
+			var o = options[i]
+			monster_affix_buttons[i].visible = true
+			var full = AffixManager.monster_affixes.get(str(o.get("id", "")), {})
+			monster_affix_emblems[i].set_affix(full)
+			monster_affix_emblems[i].visible = true
+			monster_affix_buttons[i].text = "\n\n\n" + o.name + "\n\n" + str(o.get("desc", ""))
+			_apply_quality_style(monster_affix_buttons[i], Color(0.85, 0.6, 0.95))
+		else:
+			monster_affix_buttons[i].visible = false
+			monster_affix_emblems[i].visible = false
+	if free_left > 0:
+		monster_affix_reroll_btn.text = "刷新（免费·剩余 %d 次）" % free_left
+	else:
+		monster_affix_reroll_btn.text = "刷新（%d 金）" % gold_cost
+	monster_affix_panel.visible = true
+	monster_affix_dim.visible = true
+
+func hide_monster_affix_draft() -> void:
+	monster_affix_panel.visible = false
+	monster_affix_dim.visible = false
+	for e in monster_affix_emblems:
+		e.visible = false
+
+func _on_monster_affix_btn(i: int) -> void:
+	emit_signal("monster_affix_chosen", i)
+
+func _on_monster_affix_reroll() -> void:
+	emit_signal("monster_affix_reroll")
+
 func _refresh_shop() -> void:
 	if shop_list == null:
 		return
@@ -470,6 +607,39 @@ func _refresh_shop() -> void:
 			b.connect("pressed", _on_buy_shop.bind(id))
 			shop_list.add_child(b)
 
+	# 词条商品（质变 / 超质变，金币购买，仅本局生效）
+	if AffixManager != null and AffixManager.affix_stock.size() > 0:
+		var ha = Label.new()
+		ha.text = "词条（质变 / 超质变）"
+		ha.add_theme_font_size_override("font_size", int(20 * f))
+		ha.add_theme_color_override("font_color", Color(0.6, 0.85, 1.0))
+		shop_list.add_child(ha)
+		for item_id in AffixManager.affix_stock.keys():
+			var it = AffixManager.affix_stock[item_id]
+			var hb = HBoxContainer.new()
+			hb.add_theme_constant_override("separation", int(8 * f))
+			var full = AffixManager.mutations.get(str(it.get("affix_id", "")), {})
+			var emb = AffixVisual.new()
+			emb.custom_minimum_size = Vector2(42 * f, 42 * f)
+			hb.add_child(emb)
+			if full.size() > 0:
+				emb.set_affix(full)
+			else:
+				emb.visible = false
+			var b2 = Button.new()
+			b2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			b2.custom_minimum_size = Vector2(0, 46 * f)
+			b2.add_theme_font_size_override("font_size", int(17 * f))
+			b2.text = "%s ｜ %s ｜ %d 金" % [str(it.get("name", "")), str(it.get("desc", "")), int(it.cost)]
+			b2.disabled = GameManager.gold < int(it.cost)
+			b2.connect("pressed", _on_buy_affix.bind(item_id))
+			hb.add_child(b2)
+			shop_list.add_child(hb)
+	# 刷新按钮文案 + 可用性
+	if shop_refresh_btn != null:
+		shop_refresh_btn.text = "刷新词条（%d 金）" % AffixManager.refresh_cost()
+		shop_refresh_btn.disabled = GameManager.gold < AffixManager.refresh_cost()
+
 func _on_buy_shop(id: String) -> void:
 	var p = GameManager.player
 	if ShopManager.buy(id, p):
@@ -477,6 +647,31 @@ func _on_buy_shop(id: String) -> void:
 		_refresh_shop()
 	else:
 		info("货币不足，无法购买", Color(1.0, 0.5, 0.5))
+
+## 金币刷新：重抽词条商品（质变/超质变），成本随刷新次数递增
+func _on_refresh_shop() -> void:
+	if AffixManager == null:
+		return
+	var cost = AffixManager.refresh_cost()
+	if GameManager.gold < cost:
+		info("金币不足，无法刷新", Color(1.0, 0.5, 0.5))
+		return
+	GameManager.gold -= cost
+	AffixManager.shop_refresh_count += 1
+	AffixManager.rebuild_affix_stock(GameManager.player)
+	_refresh_shop()
+
+## 购买词条商品（质变/超质变），走 AffixManager.buy_affix（已拥有则拒绝，避免重复扣金）
+func _on_buy_affix(item_id: String) -> void:
+	var p = GameManager.player
+	if AffixManager == null:
+		return
+	var name = str(AffixManager.affix_stock.get(item_id, {}).get("name", ""))
+	if AffixManager.buy_affix(item_id, p):
+		info("购买词条成功：" + name, Color(0.6, 1.0, 0.6))
+		_refresh_shop()
+	else:
+		info("无法购买该词条（货币不足或已拥有）", Color(1.0, 0.5, 0.5))
 
 func show_shop() -> void:
 	if levelup_panel != null and levelup_panel.visible:
@@ -487,6 +682,8 @@ func show_shop() -> void:
 		return
 	if pause_panel != null:
 		pause_panel.visible = false
+	if AffixManager != null and AffixManager.affix_stock.is_empty():
+		AffixManager.rebuild_affix_stock(GameManager.player)
 	_refresh_shop()
 	shop_dim.visible = true
 	shop_panel.visible = true
@@ -514,6 +711,9 @@ func _process(delta: float) -> void:
 		warn_timer -= delta
 		if warn_timer <= 0.0:
 			warn_label.visible = false
+	# 每帧刷新 HUD（取代纯事件驱动），避免击杀/升级事件风暴导致面板跳变闪烁。
+	# update_hud 内部幂等：仅在数值变化时写入，避免无谓重绘。
+	update_hud()
 	_update_info_fx(delta)
 
 func show_perf_warning(msg: String) -> void:
